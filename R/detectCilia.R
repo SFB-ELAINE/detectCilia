@@ -269,14 +269,12 @@ detectCilia <- function(input_dir = NULL,
           # Drop information that it is cilia
           df_cilium_points_connect <- df_cilium_points_connect[-3]
 
-          # Save the layer and append it to big data frame ###################
-          if(nchar(image_name) > 2){
-            .dummy <- strsplit(image_name, "")[[1]]
-            layer_number <- as.integer(
-              paste(.dummy[length(.dummy)-1], .dummy[length(.dummy)], sep=""))
-          }else{
-            layer_number <- as.integer(image_name)
-          }
+          # Save the layer and append it to big data frame #################
+
+          # Find the layer name (The file name should be of the form
+          # "..z01..","..z02..", ... )
+          layer_number <- gsub(".*z([[:digit:]]+).*","\\1",image_name)
+          layer_number <- as.integer(layer_number)
 
           df_cilium_points_connect$layer <- layer_number
 
