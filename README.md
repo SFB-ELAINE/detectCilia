@@ -10,18 +10,17 @@ fluorescence microscopy images
 rm(list = ls())
 graphics.off()
 
+# >>>>>>>>>>>>>>>>
+# Please adapt the directory of the downloaded package
+directory <- "~/detectCilia-master/"
+# <<<<<<<<<<<<<<<<
 
 list.of.packages <- c("tiff", "dplyr")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
-
 require(devtools)
 
-
-#document()
-#check()
-#build()
-
+setwd(directory)
 load_all()
 
 ## FIRST EXAMPLE DIRECTORY -------------------------------------------------
