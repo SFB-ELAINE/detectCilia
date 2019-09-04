@@ -108,7 +108,7 @@ detectCilia <- function(input_dir = NULL,
 
     # Read, manipulate and save cilia image --------------------------------
 
-    image <- tiff::readTIFF(source = image_path, info = FALSE)
+    image <- tiff::readTIFF(source = image_path, convert = TRUE, info = FALSE)
 
     # Save only color layer of cilia
     image_cilia <- editImage(image = image, cilia_color = cilia_color,
@@ -208,7 +208,7 @@ detectCilia <- function(input_dir = NULL,
 
       # Read, manipulate and save cilia image ------------------------------
 
-      image <- tiff::readTIFF(source = image_path, info = FALSE)
+      image <- tiff::readTIFF(source = image_path, convert = TRUE, info = FALSE)
 
       # Start with combining all layers to identify the cilia
 
