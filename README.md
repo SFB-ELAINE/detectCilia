@@ -6,37 +6,52 @@ fluorescence microscopy images
 
 
 ```R
-# Testscript V.1
+# Testscript V.1.1 #########################################################
+
+
+# Delete everything in the environment
 rm(list = ls())
+# close all open plots in RStudio
 graphics.off()
 
 # >>>>>>>>>>>>>>>>
-# Please adapt the directory of the downloaded package
-directory <- "~/detectCilia-master/"
+# Please adapt the following parameters ####################################
+
+# Directory of the images
+input_dir <- "images"
+# Size of a pixel in micrometer
+pixel_size <- 0.21964505359339307678791073625022 # in \mu m
+# Distance between layer in micrometer
+sclice_distance <- 0.31607# in \mu m
+cilia_color = "red"
 # <<<<<<<<<<<<<<<<
 
-list.of.packages <- c("tiff", "dplyr")
+list.of.packages <- c("devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 require(devtools)
 
-setwd(directory)
-load_all()
+devtools::install_github("SFB-ELAINE/stackImages") 
+library(stackImages)
 
-## FIRST EXAMPLE DIRECTORY -------------------------------------------------
+devtools::install_github("SFB-ELAINE/detectCilia") 
+library(detectCilia)
 
-input_dir <- "inst/testImages"
+
+## FIRST EXAMPLE DIRECRY -------------------------------------------------
 
 # Threshold to find cilia
-threshold_find <- 0.5
+threshold_find <- 0.9
+
 # Lower bound for finding pixels that belong to found cilia
 threshold_connect <- 0.1
-pixel_size <- 0.219647 # in \mu m
-sclice_distance <- 0.20944 # in \mu m
+
+# Minimum size of cilia (in pixel)
+min_size = 10
 
 # Obtain all positions of cilia in every z-layer
 df_cilium_information <- detectCilia(input_dir = input_dir,
-                                     cilia_color = "red",
+                                     cilia_color = cilia_color,
                                      threshold_find = threshold_find,
                                      threshold_connect = threshold_connect)
 
