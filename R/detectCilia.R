@@ -23,20 +23,6 @@
 #' a given cilium)
 #' @param min_size A number (give the minimum size of a cilium to be
 #' detected)
-#' @examples
-#' \dontrun{
-#' # Obtain all positions of cilia in every z-layer
-#' df_cilium_information <- detectCilia(input_dir = "inst/testFiles",
-#'                                      cilia_color = "red",
-#'                                      threshold_find = 0.5,
-#'                                      threshold_connect = 0.1)
-#'
-#' # Get the length of the cilia
-#' df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
-#'                                                0.219647,
-#'                                                0.20944)
-#' }
-#'
 
 detectCilia <- function(input_dir = NULL,
                         cilia_color = "red",
@@ -99,10 +85,10 @@ detectCilia <- function(input_dir = NULL,
   print("Connecting all images.")
   
   image_stack <- stackImages(input_dir = input_dir, stackMethod = "max")
-
+  
   # Save only color layer of cilia
   image_cilia <- editImage(image = image_stack, cilia_color = cilia_color,
-                             threshold = threshold_find)
+                           threshold = threshold_find)
   
   
   # Save information where there have been found cilia ---------------------
@@ -354,7 +340,4 @@ detectCilia <- function(input_dir = NULL,
   }
   
   return(df_cilium_information)
-}else{
-  return(0)
-}
 }

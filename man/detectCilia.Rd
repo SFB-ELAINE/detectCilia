@@ -6,8 +6,9 @@
 \alias{detectcilia}
 \title{detectCilia}
 \usage{
-detectCilia(input_dir = NULL, cilia_color = "blue", threshold_find = 0.5,
-  threshold_connect = 0.1, vicinity = NULL)
+detectCilia(input_dir = NULL, cilia_color = "red",
+  threshold_find = 0.9, threshold_connect = 0.5, vicinity = NULL,
+  min_size = 10)
 }
 \arguments{
 \item{input_dir}{A character (directory that contains all images)}
@@ -20,6 +21,9 @@ detectCilia(input_dir = NULL, cilia_color = "blue", threshold_find = 0.5,
 
 \item{vicinity}{A number (neighborhood to look for pixels that belong to
 a given cilium)}
+
+\item{min_size}{A number (give the minimum size of a cilium to be
+detected)}
 }
 \description{
 Main function for detecting cilia in images
@@ -37,21 +41,6 @@ The output will be written in the current directory.
 Please be aware that the coordinate system is turned by 90° to the right.
 The origin of the x- and y-axes is in the upper-left corner of the image.
 (The x-axis points downwards and the y-axis to the right.)
-}
-\examples{
-\dontrun{
-# Obtain all positions of cilia in every z-layer
-df_cilium_information <- detectCilia(input_dir = "inst/testFiles",
-                                     cilia_color = "red",
-                                     threshold_find = 0.5,
-                                     threshold_connect = 0.1)
-
-# Get the length of the cilia
-df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
-                                               0.219647,
-                                               0.20944)
-}
-
 }
 \author{
 Kai Budde
