@@ -6,9 +6,15 @@
 \alias{detectcilia}
 \title{detectCilia}
 \usage{
-detectCilia(input_dir = NULL, cilia_color = "red",
-  threshold_find = 0.9, threshold_connect = 0.5, vicinity = NULL,
-  min_size = 10)
+detectCilia(
+  input_dir = NULL,
+  cilia_color = "red",
+  threshold_find = 0.9,
+  threshold_connect = 0.5,
+  vicinity = NULL,
+  min_size = 10,
+  max_size = 100
+)
 }
 \arguments{
 \item{input_dir}{A character (directory that contains all images)}
@@ -22,7 +28,10 @@ detectCilia(input_dir = NULL, cilia_color = "red",
 \item{vicinity}{A number (neighborhood to look for pixels that belong to
 a given cilium)}
 
-\item{min_size}{A number (give the minimum size of a cilium to be
+\item{min_size}{A number (gives the minimum size of a cilium to be
+detected)}
+
+\item{max_size}{A number (gives the maximum size of a cilium to be
 detected)}
 }
 \description{

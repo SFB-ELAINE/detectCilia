@@ -21,7 +21,9 @@
 #' @param threshold_connect A number (minimum intensity to connect to cilia)
 #' @param vicinity A number (neighborhood to look for pixels that belong to
 #' a given cilium)
-#' @param min_size A number (give the minimum size of a cilium to be
+#' @param min_size A number (gives the minimum size of a cilium to be
+#' detected)
+#' @param max_size A number (gives the maximum size of a cilium to be
 #' detected)
 
 detectCilia <- function(input_dir = NULL,
@@ -29,7 +31,8 @@ detectCilia <- function(input_dir = NULL,
                         threshold_find = 0.9,
                         threshold_connect = 0.5,
                         vicinity = NULL,
-                        min_size = 10) {
+                        min_size = 10,
+                        max_size = 100) {
   
   
   # Basics and sourcing functions ------------------------------------------
@@ -84,7 +87,8 @@ detectCilia <- function(input_dir = NULL,
   # i = 1 .. n(images) Go through all images (tifs) ------------------------
   print("Connecting all images.")
   
-  image_stack <- stackImages(input_dir = input_dir, stackMethod = "max")
+  image_stack <- stackImages::stackImages(input_dir = input_dir,
+                                          stackMethod = "max")
   
   # Save only color layer of cilia
   image_cilia <- editImage(image = image_stack, cilia_color = cilia_color,
@@ -338,6 +342,11 @@ detectCilia <- function(input_dir = NULL,
     }
     
   }
+  
+  # Write an overlay image that contains all cilia as well as one that
+  # contains all cilia as well as numbering
+  
+  # TODO
   
   return(df_cilium_information)
 }

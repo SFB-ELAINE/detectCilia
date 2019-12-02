@@ -4,6 +4,7 @@
 .Ruserdata
 detectCilia.Rproj
 /test
+/tests
 /inst/test1
 /inst/testFiles
 /inst/testImages/output

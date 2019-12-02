@@ -6,8 +6,7 @@
 \alias{detectobject}
 \title{detectObjects}
 \usage{
-detectObjects(input_dir = NULL, cilia_color = "blue",
-  threshold = 0.1)
+detectObjects(input_dir = NULL, cilia_color = "blue", threshold = 0.1)
 }
 \arguments{
 \item{input_dir}{A character}

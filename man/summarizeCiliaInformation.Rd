@@ -6,8 +6,11 @@
 \alias{summarizeciliainformation}
 \title{summarizeCiliaInformation}
 \usage{
-summarizeCiliaInformation(df_cilium_information = df_cilium_information,
-  pixel_size = pixel_size, sclice_distance = sclice_distance)
+summarizeCiliaInformation(
+  df_cilium_information = df_cilium_information,
+  pixel_size = pixel_size,
+  sclice_distance = sclice_distance
+)
 }
 \arguments{
 \item{df_cilium_information}{A data fram}
