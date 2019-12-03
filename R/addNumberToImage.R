@@ -44,7 +44,7 @@ addNumberToImage <- function(image = NULL,
   
   for(i in 1:number_of_digits){
     digit <- list_of_digits[i]
-    digit_path <- paste("data/digits/", digit, ".tiff", sep="")
+    digit_path <- paste("inst/digits/", digit, ".tiff", sep="")
     digit_image <- tiff::readTIFF(source = digit_path, convert = TRUE,
                             info = FALSE)
     

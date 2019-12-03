@@ -31,7 +31,7 @@ detectCilia <- function(input_dir = NULL,
                         threshold_find = 0.9,
                         threshold_connect = 0.5,
                         vicinity = NULL,
-                        min_size = 10,
+                        min_size = 3,
                         max_size = 100) {
   
   
@@ -89,6 +89,7 @@ detectCilia <- function(input_dir = NULL,
   
   image_stack <- stackImages::stackImages(input_dir = input_dir,
                                           stackMethod = "max")
+  image_stack_copy <- image_stack
   
   # Save only color layer of cilia
   image_cilia <- editImage(image = image_stack, cilia_color = cilia_color,
@@ -186,11 +187,18 @@ detectCilia <- function(input_dir = NULL,
     i <- which(df_cilium_points$ciliumNumber==0)[1]
   }
   
-  # Delete all structures that are too small and therefore ###############
-  # may not be a cilium
+  # Delete all structures that are too small and therefore may not be a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
     if(sum(df_cilium_points$ciliumNumber == i) < min_size){
+      df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber == i),]
+    }
+  }
+  
+  # Delete all structures that are too big and therefore may not be a cilium
+  
+  for(i in unique(df_cilium_points$ciliumNumber)){
+    if(sum(df_cilium_points$ciliumNumber == i) > max_size){
       df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber == i),]
     }
   }
@@ -218,7 +226,7 @@ detectCilia <- function(input_dir = NULL,
   
   # Save image after looking for the brightest spots
   tiff::writeTIFF(what = image_stack,
-                  where = paste(output_dir, "stack_cilia.tif", sep = ""),
+                  where = paste(output_dir, "stack_cilia_first.tif", sep = ""),
                   bits.per.sample = 8L, compression = "none",
                   reduce = TRUE)
   
@@ -343,10 +351,56 @@ detectCilia <- function(input_dir = NULL,
     
   }
   
-  # Write an overlay image that contains all cilia as well as one that
-  # contains all cilia as well as numbering
+  # Save the stack with cilium information of all layers ###################
+  df_cilium_all <- df_cilium_information
+  df_cilium_all$rowcol <- paste(df_cilium_all$row,
+                                df_cilium_all$col,
+                                sep = ",")
+  df_cilium_all <- df_cilium_all[df_cilium_all$rowcol == unique(df_cilium_all$rowcol),]
+  df_cilium_all <- df_cilium_all[,-c(5)]
+  df_cilium_all$layer <- -99
+  df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, row, col)
   
-  # TODO
+  # Add information of all cilium coordinates as layer -99 to data frame
+  df_cilium_information <- rbind(df_cilium_information, df_cilium_all)
+  
+  # Mark all cilia coordinates in a new stack image
+  image_stack_all_cilia <- image_stack_copy
+  
+  for(k in 1:length(df_cilium_all$row)){
+    image_stack_all_cilia[df_cilium_all$row[k], df_cilium_all$col[k], 1] <- 1
+    image_stack_all_cilia[df_cilium_all$row[k], df_cilium_all$col[k], 2] <- 1
+  }
+  
+  tiff::writeTIFF(what = image_stack_all_cilia,
+                  where = paste(output_dir, "stack_cilia_all.tif", sep = ""),
+                  bits.per.sample = 8L, compression = "none",
+                  reduce = TRUE)
+  
+  # Add numbers to image
+  image_stack_numbers <- image_stack_all_cilia
+  
+  for(i in 1:length(unique(df_cilium_all$ciliumNumber))){
+    ciliumNumber <- unique(df_cilium_all$ciliumNumber)[i]
+    pos_x <- df_cilium_all$row[df_cilium_all$ciliumNumber == i][
+      length(df_cilium_all$row[df_cilium_all$ciliumNumber == i])]
+    pos_y <- df_cilium_all$col[df_cilium_all$ciliumNumber == i][
+      length(df_cilium_all$col[df_cilium_all$ciliumNumber == i])]
+    
+    image_stack_numbers <- addNumberToImage(image = image_stack_numbers,
+                                            number = ciliumNumber,
+                                            pos_x = pos_x,
+                                            pos_y = pos_y,
+                                            number_size_factor = NULL,
+                                            number_color = "red")
+    
+  }
+
+  tiff::writeTIFF(what = image_stack_numbers,
+                  where = paste(output_dir, "stack_cilia_all_numbers.tif", sep = ""),
+                  bits.per.sample = 8L, compression = "none",
+                  reduce = TRUE)
+  
   
   return(df_cilium_information)
 }

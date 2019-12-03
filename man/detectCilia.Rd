@@ -12,7 +12,7 @@ detectCilia(
   threshold_find = 0.9,
   threshold_connect = 0.5,
   vicinity = NULL,
-  min_size = 10,
+  min_size = 3,
   max_size = 100
 )
 }

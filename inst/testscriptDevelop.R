@@ -26,7 +26,8 @@ threshold_find <- 0.9
 threshold_connect <- 0.1
 
 # Minimum size of cilia (in pixel)
-min_size = 10
+min_size = 3
+max_siz = 50
 # <<<<<<<<<<<<<<<<
 
 # Load packaes #############################################################
@@ -37,7 +38,7 @@ if(length(new.packages)) install.packages(new.packages)
 require(devtools)
 
 # Check package
-check()
+#check()
 
 # Load package to use it
 load_all()
