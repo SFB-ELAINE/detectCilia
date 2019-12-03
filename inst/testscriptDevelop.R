@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/01
+# Last changed: 2019/12/03
 
 
 # Delete everything in the environment
@@ -58,3 +58,7 @@ df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
 
 write.csv(df_cilium_summary,
           file = paste(input_dir, "/output/cilium_summary.csv", sep=""))
+
+write.csv2(df_cilium_summary,
+          file = paste(input_dir, "/output/cilium_summary_de.csv", sep=""))
+

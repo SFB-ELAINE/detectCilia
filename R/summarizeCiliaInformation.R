@@ -38,8 +38,8 @@ summarizeCiliaInformation <- function(
     df_cilium_projection <- df_cilium_information[
       df_cilium_information$ciliumNumber == i,]
     # height of cilium (projection in vertical direction)
-    lower_layer <- min(df_cilium_projection$layer[df_cilium_projection$layer!=-1])
-    upper_layer <- max(df_cilium_projection$layer[df_cilium_projection$layer!=-1])
+    lower_layer <- min(df_cilium_projection$layer[df_cilium_projection$layer > 0])
+    upper_layer <- max(df_cilium_projection$layer[df_cilium_projection$layer > 0])
 
     vertical_length <- (upper_layer-lower_layer) * sclice_distance # in \mu m
 
