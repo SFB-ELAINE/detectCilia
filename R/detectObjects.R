@@ -9,7 +9,7 @@
 #' @author Kai Budde
 #' @export detectObjects
 #' @param input_dir A character
-#' @param cilia_color A character
+#' @param cilium_color A character
 #' @param threshold A number
 #' @examples
 #' \dontrun{
@@ -19,7 +19,7 @@
 #'
 
 detectObjects <- function(input_dir = NULL,
-                        cilia_color = "blue",
+                        cilium_color = "blue",
                         threshold = 0.1) {
 
 
@@ -83,7 +83,7 @@ detectObjects <- function(input_dir = NULL,
     image <- tiff::readTIFF(source = image_path, info = FALSE)
 
     # Save only color layer of cilia
-    image_cilia <- editImage(image = image, cilia_color = cilia_color,
+    image_cilia <- editImage(image = image, cilium_color = cilium_color,
                              threshold = threshold)
 
     # Save the cilia image

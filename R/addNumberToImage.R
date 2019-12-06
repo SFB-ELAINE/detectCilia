@@ -64,8 +64,7 @@ addNumberToImage <- function(image = NULL,
       
       # It should be possible to have every number at least ten times in
       # every direction
-      number_size_factor <- min_repeating_number / 10
-      
+      number_size_factor <- min_repeating_number / 20
     }
     
     digit_image <- resizeImage(digit_image, number_size_factor)
@@ -79,9 +78,21 @@ addNumberToImage <- function(image = NULL,
     digit_image_size_x <- dim(digit_image)[1]
     digit_image_size_y <- dim(digit_image)[2]
     
-    if( (pos_x + digit_image_size_x - 1) > dim(image_with_numbers)[1]){
-      pos_x <- dim(image_with_numbers)[1] - digit_image_size_x
+    # Right side
+    if( (pos_x + number_of_digits * digit_image_size_x - 1) >
+        dim(image_with_numbers)[1] ){
+      pos_x <- dim(image_with_numbers)[1] - i * digit_image_size_x
     }
+    
+    # Lower side
+    if( (pos_y + number_of_digits * digit_image_size_y - 1) >
+        dim(image_with_numbers)[2] ){
+      pos_y <- dim(image_with_numbers)[2] - i * digit_image_size_y
+    }
+    
+    # Add size of digit for the next digit
+    pos_x <- pos_x + (i-1) * digit_image_size_x
+    pos_y <- pos_y + (i-1) * digit_image_size_y
     
     # Copy smaller matrix into bigger one
     for(row in 1:digit_image_size_x){

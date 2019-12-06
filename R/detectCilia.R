@@ -16,9 +16,10 @@
 #' @author Kai Budde
 #' @export detectCilia
 #' @param input_dir A character (directory that contains all images)
-#' @param cilia_color A character (color of the cilia staining)
-#' @param threshold_find A number (minimum intensity to find cilia)
-#' @param threshold_connect A number (minimum intensity to connect to cilia)
+#' @param cilium_color A character (color of the cilia staining)
+#' @param threshold_find A number (minimum intensity to find cilia compared)
+#' @param threshold_connect A number (minimum intensity to connect to
+#' already detected cilium)
 #' @param vicinity A number (neighborhood to look for pixels that belong to
 #' a given cilium)
 #' @param min_size A number (gives the minimum size of a cilium to be
@@ -27,7 +28,7 @@
 #' detected)
 
 detectCilia <- function(input_dir = NULL,
-                        cilia_color = "red",
+                        cilium_color = "red",
                         threshold_find = 0.9,
                         threshold_connect = 0.5,
                         vicinity = NULL,
@@ -92,7 +93,7 @@ detectCilia <- function(input_dir = NULL,
   image_stack_copy <- image_stack
   
   # Save only color layer of cilia
-  image_cilia <- editImage(image = image_stack, cilia_color = cilia_color,
+  image_cilia <- editImage(image = image_stack, cilium_color = cilium_color,
                            threshold = threshold_find)
   
   
@@ -264,7 +265,7 @@ detectCilia <- function(input_dir = NULL,
     
     # Load image with the threshold_connect
     image_cilia_connect <- editImage(image = image,
-                                     cilia_color = cilia_color,
+                                     cilium_color = cilium_color,
                                      threshold = threshold_connect)
     
     # Get positions of the cilia

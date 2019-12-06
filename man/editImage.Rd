@@ -7,22 +7,23 @@
 \alias{imageEdit}
 \title{editImage}
 \usage{
-editImage(image = NULL, cilia_color = NULL, threshold = NULL)
+editImage(image = NULL, cilium_color = NULL, threshold = NULL)
 }
 \arguments{
 \item{image}{An three-dimensional array of numbers between 0 and 1}
 
-\item{cilia_color}{A character (color of the staining of the cilia)}
+\item{cilium_color}{A character (color of the staining of the cilia)}
 
-\item{threshold}{A character (that determine tha brightness of a pixel
-to be counted)}
+\item{threshold}{A number (that determines the brightness of a pixel to
+be counted as cilium pixel)}
 }
 \description{
 Get the layer of the primary cilia
 }
 \details{
 By using an x-y-3(rgb)-representation of an image, you can
-extract the information of the cilia in an image.
+extract the information of the cilia in an image and only use those pixel
+that are above a certain threshold.
 }
 \author{
 Kai Budde

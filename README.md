@@ -8,7 +8,7 @@ fluorescence microscopy images
 ```R
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/03
+# Last changed: 2019/12/06
 
 
 # Delete everything in the environment
@@ -28,10 +28,10 @@ pixel_size <- 0.21964505359339307678791073625022 # in \mu m
 
 # Distance between layer in micrometer
 sclice_distance <- 0.31607# in \mu m
-cilia_color = "red"
+cilium_color <- "red"
 
 # Threshold to find cilia in stack image (max intensities of all layers)
-threshold_find <- 0.9
+threshold_find <- 0.4
 
 # Lower bound for finding pixels that belong to found cilia in every layer
 threshold_connect <- 0.1
@@ -62,7 +62,7 @@ library(detectCilia)
 
 # Obtain all positions of cilia in every z-layer
 df_cilium_information <- detectCilia(input_dir = input_dir,
-                                     cilia_color = cilia_color,
+                                     cilium_color = cilium_color,
                                      threshold_find = threshold_find,
                                      threshold_connect = threshold_connect,
                                      vicinity = vicinity,
@@ -78,7 +78,6 @@ write.csv(df_cilium_summary,
           file = paste(input_dir, "/output/cilium_summary.csv", sep=""))
 
 write.csv2(df_cilium_summary,
-           file = paste(input_dir, "/output/cilium_summary_de.csv", sep=""))
-
+          file = paste(input_dir, "/output/cilium_summary_de.csv", sep=""))
 
 ```

@@ -8,7 +8,7 @@
 \usage{
 detectCilia(
   input_dir = NULL,
-  cilia_color = "red",
+  cilium_color = "red",
   threshold_find = 0.9,
   threshold_connect = 0.5,
   vicinity = NULL,
@@ -19,11 +19,12 @@ detectCilia(
 \arguments{
 \item{input_dir}{A character (directory that contains all images)}
 
-\item{cilia_color}{A character (color of the cilia staining)}
+\item{cilium_color}{A character (color of the cilia staining)}
 
-\item{threshold_find}{A number (minimum intensity to find cilia)}
+\item{threshold_find}{A number (minimum intensity to find cilia compared)}
 
-\item{threshold_connect}{A number (minimum intensity to connect to cilia)}
+\item{threshold_connect}{A number (minimum intensity to connect to
+already detected cilium)}
 
 \item{vicinity}{A number (neighborhood to look for pixels that belong to
 a given cilium)}

@@ -1,17 +1,18 @@
 #' @title editImage
 #' @description Get the layer of the primary cilia
 #' @details By using an x-y-3(rgb)-representation of an image, you can
-#' extract the information of the cilia in an image.
+#' extract the information of the cilia in an image and only use those pixel
+#' that are above a certain threshold.
 #' @aliases editimage imageedit imageEdit
 #' @author Kai Budde
 #' @export editImage
 #' @param image An three-dimensional array of numbers between 0 and 1
-#' @param cilia_color A character (color of the staining of the cilia)
-#' @param threshold A character (that determine tha brightness of a pixel
-#' to be counted)
+#' @param cilium_color A character (color of the staining of the cilia)
+#' @param threshold A number (that determines the brightness of a pixel to
+#' be counted as cilium pixel)
 
 editImage <- function(image = NULL,
-                      cilia_color = NULL,
+                      cilium_color = NULL,
                       threshold = NULL){
 
   # Default values for missing arguments -----------------------------------
@@ -23,19 +24,19 @@ editImage <- function(image = NULL,
     threshold <- 0.1
   }
 
-  if(missing(cilia_color)){
-    cilia_color <- "blue"
+  if(missing(cilium_color)){
+    cilium_color <- "blue"
   }
 
-  cilia_color <- tolower(cilia_color)
+  cilium_color <- tolower(cilium_color)
 
   # Extract the layer of the cilia -----------------------------------------
 
-  if(cilia_color == "red" | cilia_color == "r"){
+  if(cilium_color == "red" | cilium_color == "r"){
     image_cilia <- image[,,1]
-  }else if(cilia_color == "green" | cilia_color == "g"){
+  }else if(cilium_color == "green" | cilium_color == "g"){
     image_cilia <- image[,,2]
-  }else if(cilia_color == "blue" | cilia_color == "b"){
+  }else if(cilium_color == "blue" | cilium_color == "b"){
     image_cilia <- image[,,3]
   }else{
     print(paste("Please enter a color (red, green or blue) for the cilia.",
@@ -44,6 +45,19 @@ editImage <- function(image = NULL,
   }
 
   # higher contrast of the cilia -------------------------------------------
+  #threshold <- threshold * sum(image_cilia[,])/sum(image_cilia[,]>0)
+  #print(threshold)
+  #print(sum(image_cilia[,])/sum(image_cilia[,]>0))
+  #print(threshold)
+  
+  # Making sure that the calculated threshold is not above 1 or below 0
+  if(threshold > 1){
+    threshold <- 1
+  }
+  if(threshold < 0){
+    threshold <- 0
+  }
+  
   image_cilia[,][image_cilia[,] >= threshold] <- 1
   image_cilia[,][image_cilia[,] < threshold] <- 0
 
