@@ -59,12 +59,12 @@ addNumberToImage <- function(image = NULL,
     
     # Resize image
     if(is.null(number_size_factor)){
-      min_repeating_number <- min(dim(image_with_numbers)[1]/dim(digit_image)[1],
-                                  dim(image_with_numbers)[2]/dim(digit_image)[2])
-      
+      min_repeating_number <-
+        min(dim(image_with_numbers)[1]/dim(digit_image)[1],
+            dim(image_with_numbers)[2]/dim(digit_image)[2])
       # It should be possible to have every number at least ten times in
       # every direction
-      number_size_factor <- min_repeating_number / 20
+      number_size_factor <- min_repeating_number / 30
     }
     
     digit_image <- resizeImage(digit_image, number_size_factor)

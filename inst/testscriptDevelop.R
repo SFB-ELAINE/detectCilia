@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/06
+# Last changed: 2019/12/10
 
 
 # Delete everything in the environment
@@ -35,6 +35,9 @@ vicinity <- 1
 min_size <- 3
 max_size <- 50
 
+# Scaling factor for digit numbers
+number_size_factor <- 0.2
+
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Load packaes #############################################################
@@ -59,7 +62,8 @@ df_cilium_information <- detectCilia(input_dir = input_dir,
                                      threshold_connect = threshold_connect,
                                      vicinity = vicinity,
                                      min_size = min_size,
-                                     max_size = max_size)
+                                     max_size = max_size,
+                                     number_size_factor = number_size_factor)
 
 # Get the length of the cilia
 df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
