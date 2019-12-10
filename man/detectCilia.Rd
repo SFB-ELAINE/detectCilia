@@ -13,7 +13,8 @@ detectCilia(
   threshold_connect = 0.5,
   vicinity = NULL,
   min_size = 3,
-  max_size = 100
+  max_size = 100,
+  number_size_factor = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ detected)}
 
 \item{max_size}{A number (gives the maximum size of a cilium to be
 detected)}
+
+\item{number_size_factor}{A number (factor for resizing the digit image)}
 }
 \description{
 Main function for detecting cilia in images

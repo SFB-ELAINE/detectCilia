@@ -26,6 +26,7 @@
 #' detected)
 #' @param max_size A number (gives the maximum size of a cilium to be
 #' detected)
+#' @param number_size_factor A number (factor for resizing the digit image)
 
 detectCilia <- function(input_dir = NULL,
                         cilium_color = "red",
@@ -33,7 +34,8 @@ detectCilia <- function(input_dir = NULL,
                         threshold_connect = 0.5,
                         vicinity = NULL,
                         min_size = 3,
-                        max_size = 100) {
+                        max_size = 100,
+                        number_size_factor = NULL) {
   
   
   # Basics and sourcing functions ------------------------------------------
@@ -392,7 +394,7 @@ detectCilia <- function(input_dir = NULL,
                                             number = ciliumNumber,
                                             pos_x = pos_x,
                                             pos_y = pos_y,
-                                            number_size_factor = NULL,
+                                            number_size_factor = number_size_factor,
                                             number_color = "red")
     
   }
