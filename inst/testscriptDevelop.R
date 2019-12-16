@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/10
+# Last changed: 2019/12/16
 
 
 # Delete everything in the environment
@@ -13,30 +13,30 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-input_dir <- "inst/testImages2"
+input_dir <- "tests/images2"
 
 # Size of a pixel in micrometer
 pixel_size <- 0.21964505359339307678791073625022 # in \mu m
 
 # Distance between layer in micrometer
-sclice_distance <- 0.31607# in \mu m
+sclice_distance <- 0.436356# in \mu m
 cilium_color <- "red"
 
 # Threshold to find cilia in stack image (max intensities of all layers)
-threshold_find <- 0.4
+threshold_find <- 0.13
 
 # Lower bound for finding pixels that belong to found cilia in every layer
-threshold_connect <- 0.1
+threshold_connect <- 0.05
 
 # How many pixels to skip for joining seperate cilium pixels to one cilium
-vicinity <- 1
+vicinity <- 2
 
 # Minimum/Maximum size of cilia (in pixel)
-min_size <- 3
-max_size <- 50
+min_size <- 20
+max_size <- 150
 
 # Scaling factor for digit numbers
-number_size_factor <- 0.2
+number_size_factor <- 0.15
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

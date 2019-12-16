@@ -41,7 +41,9 @@ addNumberToImage <- function(image = NULL,
   number_of_digits <- length(list_of_digits)
   
   # Add the digits to the image --------------------------------------------
+  image_with_numbers <- image
   
+  # Go through all digit images and save the matrices in a list ---
   for(i in 1:number_of_digits){
     digit <- list_of_digits[i]
     
@@ -54,57 +56,68 @@ addNumberToImage <- function(image = NULL,
     # Only keep the black layer
     digit_image <- digit_image[,,4]
     if(i == 1){
-      image_with_numbers <- image
+      digit_images <- list()
+      
+      # Resizing factor depending on size of first digit
+      if(is.null(number_size_factor)){
+        min_repeating_number <-
+          min(dim(image_with_numbers)[1]/dim(digit_image)[1],
+              dim(image_with_numbers)[2]/dim(digit_image)[2])
+        
+        # It should be possible to have every number at least thirty times
+        # in every direction
+        number_size_factor <- min_repeating_number / 30
+      }
+      
+      
+      digits_size_x <- 0
+      digits_size_y <- 0
     }
     
     # Resize image
-    if(is.null(number_size_factor)){
-      min_repeating_number <-
-        min(dim(image_with_numbers)[1]/dim(digit_image)[1],
-            dim(image_with_numbers)[2]/dim(digit_image)[2])
-      # It should be possible to have every number at least ten times in
-      # every direction
-      number_size_factor <- min_repeating_number / 30
-    }
-    
     digit_image <- resizeImage(digit_image, number_size_factor)
+    digit_images[[i]] <- digit_image
     
-    # Choose layer of image where the number should be added to
-    if(tolower(number_color) == "red"){
-      image_layer <- 1
-    }
+    # Save dimensions of all digits
+    digits_size_x <- max(digits_size_x, dim(digit_image)[1])
+    digits_size_y <- digits_size_y + dim(digit_image)[2]
+  }
+  
+  # Choose layer of image where the number should be added to
+  if(tolower(number_color) == "red"){
+    image_layer <- 1
+  }
+  
+  # Adapt the starting position so the digits will be completely seen ---
+  
+  # Right side
+  if( (pos_y + digits_size_y) > dim(image_with_numbers)[2] ){
+    pos_y <- dim(image_with_numbers)[2] - digits_size_y
+  }
+  
+  # Lower side
+  if( (pos_x + digits_size_x) > dim(image_with_numbers)[1]){
+    pos_x <- dim(image_with_numbers)[1] - digits_size_x
+  }
+  
+  
+  # Add all digit images to bigger one ---
+  for(i in 1:number_of_digits){
+    digit_image_size_x <- dim(digit_images[[i]])[1]
+    digit_image_size_y <- dim(digit_images[[i]])[2]
     
-    # Adapt the starting position so the digits will be completely seen
-    digit_image_size_x <- dim(digit_image)[1]
-    digit_image_size_y <- dim(digit_image)[2]
     
-    # Right side
-    if( (pos_x + number_of_digits * digit_image_size_x - 1) >
-        dim(image_with_numbers)[1] ){
-      pos_x <- dim(image_with_numbers)[1] - i * digit_image_size_x
-    }
-    
-    # Lower side
-    if( (pos_y + number_of_digits * digit_image_size_y - 1) >
-        dim(image_with_numbers)[2] ){
-      pos_y <- dim(image_with_numbers)[2] - i * digit_image_size_y
-    }
-    
-    # Add size of digit for the next digit
-    pos_x <- pos_x + (i-1) * digit_image_size_x
-    pos_y <- pos_y + (i-1) * digit_image_size_y
-    
-    # Copy smaller matrix into bigger one
     for(row in 1:digit_image_size_x){
       for(col in 1:digit_image_size_y){
         image_with_numbers[pos_x + row, pos_y + col, image_layer] <-
-          min(digit_image[row, col] +
+          min(digit_images[[i]][row, col] +
                 image_with_numbers[pos_x + row, pos_y + col, image_layer], 1)
       }
     }
     
-    
+    # Adapt starting position for the next digit
+    pos_y <- pos_y + digit_image_size_y
   }
-  
+
   return(image_with_numbers)
 }
