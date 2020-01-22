@@ -325,8 +325,18 @@ detectCilia <- function(input_dir = NULL,
         # Save the layer and append it to big data frame #################
         
         # Find the layer name (The file name should be of the form
-        # "..z01..","..z02..", ... )
-        layer_number <- gsub(".*z([[:digit:]]+).*","\\1",image_name)
+        # "..z01..","..z02..", ... for files obtained from ZEN oder of the
+        # form "0001", "0002", ... for files obtained from ImageJ)
+        if(grepl(pattern = ".*z([[:digit:]]+).*",
+                  x = image_name, ignore.case = TRUE)){
+          layer_number <- gsub(".*z([[:digit:]]+).*","\\1", image_name)
+        }else if(grepl(pattern = ".*([[:digit:]]{3,})$",
+                       x = image_name, ignore.case = TRUE)){
+          layer_number <- gsub(".*([[:digit:]]{3,})$","\\1", image_name)
+        }else{
+          
+        }
+        
         layer_number <- as.integer(layer_number)
         
         df_cilium_points_connect$layer <- layer_number
