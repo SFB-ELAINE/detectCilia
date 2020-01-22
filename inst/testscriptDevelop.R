@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/16
+# Last changed: 2020/01/22
 
 
 # Delete everything in the environment
@@ -13,7 +13,7 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-input_dir <- "tests/images2"
+input_dir <- "tests/images4"
 
 # Size of a pixel in micrometer
 pixel_size <- 0.21964505359339307678791073625022 # in \mu m

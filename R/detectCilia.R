@@ -330,11 +330,12 @@ detectCilia <- function(input_dir = NULL,
         if(grepl(pattern = ".*z([[:digit:]]+).*",
                   x = image_name, ignore.case = TRUE)){
           layer_number <- gsub(".*z([[:digit:]]+).*","\\1", image_name)
-        }else if(grepl(pattern = ".*([[:digit:]]{3,})$",
+        }else if(grepl(pattern = ".*([[:digit:]]{2})$",
                        x = image_name, ignore.case = TRUE)){
-          layer_number <- gsub(".*([[:digit:]]{3,})$","\\1", image_name)
+          layer_number <- gsub(".*([[:digit:]]{2,})$","\\1", image_name)
         }else{
-          
+          print("The naming of the files is bad.")
+          return(0)
         }
         
         layer_number <- as.integer(layer_number)
