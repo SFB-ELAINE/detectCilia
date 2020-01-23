@@ -31,20 +31,20 @@ sclice_distance <- 0.31607# in \mu m
 cilium_color <- "red"
 
 # Threshold to find cilia in stack image (max intensities of all layers)
-threshold_find <- 0.4
+threshold_find <- 0.01
 
 # Lower bound for finding pixels that belong to found cilia in every layer
-threshold_connect <- 0.1
+threshold_connect <- 0.005
 
 # How many pixels to skip for joining seperate cilium pixels to one cilium
-vicinity <- 1
+vicinity <- 2
 
 # Minimum/Maximum size of cilia (in pixel)
-min_size <- 3
-max_size <- 50
+min_size <- 20
+max_size <- 150
 
 # Scaling factor for digit numbers
-number_size_factor <- 0.2
+number_size_factor <- 0.15
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -54,8 +54,9 @@ new.packages <- list.of.packages[
 if(length(new.packages)) install.packages(new.packages)
 require(devtools)
 
-devtools::install_github("SFB-ELAINE/stackImages") 
-library(stackImages)
+# Install the R package for producing stacks of the images
+devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
+require(stackImages)
 
 devtools::install_github("SFB-ELAINE/detectCilia") 
 library(detectCilia)

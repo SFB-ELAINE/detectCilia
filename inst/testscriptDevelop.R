@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2020/01/22
+# Last changed: 2020/01/23
 
 
 # Delete everything in the environment
@@ -13,7 +13,7 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-input_dir <- "tests/images4"
+input_dir <- "tests/images6"
 
 # Size of a pixel in micrometer
 pixel_size <- 0.21964505359339307678791073625022 # in \mu m
@@ -23,10 +23,10 @@ sclice_distance <- 0.436356# in \mu m
 cilium_color <- "red"
 
 # Threshold to find cilia in stack image (max intensities of all layers)
-threshold_find <- 0.13
+threshold_find <- 0.01
 
 # Lower bound for finding pixels that belong to found cilia in every layer
-threshold_connect <- 0.05
+threshold_connect <- 0.005
 
 # How many pixels to skip for joining seperate cilium pixels to one cilium
 vicinity <- 2
@@ -46,6 +46,10 @@ list.of.packages <- c("devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 require(devtools)
+
+# Install the R package for producing stacks of the images
+devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
+require(stackImages)
 
 # Check package
 #check()

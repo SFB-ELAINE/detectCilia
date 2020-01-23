@@ -17,7 +17,7 @@
 #' @export detectCilia
 #' @param input_dir A character (directory that contains all images)
 #' @param cilium_color A character (color of the cilia staining)
-#' @param threshold_find A number (minimum intensity to find cilia compared)
+#' @param threshold_find A number (minimum intensity to find cilia)
 #' @param threshold_connect A number (minimum intensity to connect to
 #' already detected cilium)
 #' @param vicinity A number (neighborhood to look for pixels that belong to
@@ -91,7 +91,8 @@ detectCilia <- function(input_dir = NULL,
   print("Connecting all images.")
   
   image_stack <- stackImages::stackImages(input_dir = input_dir,
-                                          stackMethod = "max")
+                                          stackMethod = "addAndNormalize")
+
   image_stack_copy <- image_stack
   
   # Save only color layer of cilia
@@ -262,6 +263,9 @@ detectCilia <- function(input_dir = NULL,
     # Read, manipulate and save cilia image ------------------------------
     
     image <- tiff::readTIFF(source = image_path, convert = TRUE, info = FALSE)
+    
+    # Normalize image
+    image <- normalizeIntensity(image = image)
     
     # Start with combining all layers to identify the cilia
     

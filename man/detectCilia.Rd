@@ -22,7 +22,7 @@ detectCilia(
 
 \item{cilium_color}{A character (color of the cilia staining)}
 
-\item{threshold_find}{A number (minimum intensity to find cilia compared)}
+\item{threshold_find}{A number (minimum intensity to find cilia)}
 
 \item{threshold_connect}{A number (minimum intensity to connect to
 already detected cilium)}
