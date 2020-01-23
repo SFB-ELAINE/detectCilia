@@ -58,7 +58,7 @@ require(devtools)
 devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
 require(stackImages)
 
-devtools::install_github("SFB-ELAINE/detectCilia") 
+devtools::install_github("SFB-ELAINE/detectCilia", ref = "v0.4.0") 
 library(detectCilia)
 
 
