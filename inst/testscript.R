@@ -22,11 +22,17 @@ pixel_size <- 0.21964505359339307678791073625022 # in \mu m
 sclice_distance <- 0.31607# in \mu m
 cilium_color <- "red"
 
+# Use internal calculation of threshold by looking at cilium color pixel
+# density
+threshold_by_density_of_cilium_pixels <- TRUE
+
 # Threshold to find cilia in stack image (max intensities of all layers)
-threshold_find <- 0.01
+# threshold_find <- 0.01
+# <- unnecessary if threshold_by_density_of_cilium_pixels == TRUE
 
 # Lower bound for finding pixels that belong to found cilia in every layer
-threshold_connect <- 0.005
+# threshold_connect <- 0.005
+# <- unnecessary if threshold_by_density_of_cilium_pixels == TRUE
 
 # How many pixels to skip for joining seperate cilium pixels to one cilium
 vicinity <- 2

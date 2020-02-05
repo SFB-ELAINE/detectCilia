@@ -9,8 +9,9 @@
 detectCilia(
   input_dir = NULL,
   cilium_color = "red",
-  threshold_find = 0.9,
-  threshold_connect = 0.5,
+  threshold_by_density_of_cilium_pixels = FALSE,
+  threshold_find = 0.01,
+  threshold_connect = 0.005,
   vicinity = NULL,
   min_size = 3,
   max_size = 100,
@@ -21,6 +22,11 @@ detectCilia(
 \item{input_dir}{A character (directory that contains all images)}
 
 \item{cilium_color}{A character (color of the cilia staining)}
+
+\item{threshold_by_density_of_cilium_pixels}{A Boolean (disregard the
+threshold values if true and instead use a custom function to calculate
+the thresholds by looking at the density of cilium color pixels found in
+the image)}
 
 \item{threshold_find}{A number (minimum intensity to find cilia)}
 

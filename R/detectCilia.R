@@ -17,6 +17,10 @@
 #' @export detectCilia
 #' @param input_dir A character (directory that contains all images)
 #' @param cilium_color A character (color of the cilia staining)
+#' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
+#' threshold values if true and instead use a custom function to calculate
+#' the thresholds by looking at the density of cilium color pixels found in
+#' the image)
 #' @param threshold_find A number (minimum intensity to find cilia)
 #' @param threshold_connect A number (minimum intensity to connect to
 #' already detected cilium)
@@ -30,8 +34,9 @@
 
 detectCilia <- function(input_dir = NULL,
                         cilium_color = "red",
-                        threshold_find = 0.9,
-                        threshold_connect = 0.5,
+                        threshold_by_density_of_cilium_pixels = FALSE,
+                        threshold_find = 0.01,
+                        threshold_connect = 0.005,
                         vicinity = NULL,
                         min_size = 3,
                         max_size = 100,
@@ -92,8 +97,37 @@ detectCilia <- function(input_dir = NULL,
   
   image_stack <- stackImages::stackImages(input_dir = input_dir,
                                           stackMethod = "addAndNormalize")
-
+  
   image_stack_copy <- image_stack
+  
+  # Calculate threshold find and threshold connect if
+  # threshold_by_density_of_cilium_pixels == TRUE
+  if(threshold_by_density_of_cilium_pixels == TRUE){
+    print(paste("Recalculating the thresholds, because ",
+                "threshold_by_density_of_cilium_pixels was given as ",
+                "TRUE.", sep=""))
+
+    image_cilia_layer <- getLayer(image = image_stack,
+                                  layer = cilium_color)
+    
+    number_of_cilium_pixels <- sum(image_cilia_layer > 0)
+    density_of_cilium_pixels <- number_of_cilium_pixels /
+      (dim(image_cilia_layer)[1] * dim(image_cilia_layer)[2])
+    
+    # Custom formula (found by analyzing a few images) for calculating the
+    # thresholds
+    threshold_find <- (density_of_cilium_pixels + 0.006) / 0.867
+    threshold_find <- round(threshold_find, 4)
+    threshold_connect <- threshold_find / 2
+    
+    print(paste("The new threshold values are: threshold_find = ",
+                threshold_find, " and threshold_connect = ",
+                threshold_connect,
+                ".",
+                sep=""))
+    
+    rm(image_cilia_layer)
+  }
   
   # Save only color layer of cilia
   image_cilia <- editImage(image = image_stack, cilium_color = cilium_color,
