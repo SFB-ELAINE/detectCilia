@@ -8,7 +8,8 @@ fluorescence microscopy images
 ```R
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde
-# Last changed: 2019/12/06
+# Last changed: 2020/02/13
+# Version of detectCilia: 0.4.1
 
 
 # Delete everything in the environment
@@ -73,8 +74,7 @@ library(detectCilia)
 # Obtain all positions of cilia in every z-layer
 df_cilium_information <- detectCilia(input_dir = input_dir,
                                      cilium_color = cilium_color,
-                                     threshold_find = threshold_find,
-                                     threshold_connect = threshold_connect,
+                                     threshold_by_density_of_cilium_pixels = threshold_by_density_of_cilium_pixels,
                                      vicinity = vicinity,
                                      min_size = min_size,
                                      max_size = max_size,
