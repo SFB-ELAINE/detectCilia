@@ -16,7 +16,8 @@
 #' @author Kai Budde
 #' @export detectCilia
 #' @param input_dir A character (directory that contains all images)
-#' @param cilium_color A character (color of the cilia staining)
+#' @param cilium_color A character (color of the cilium staining)
+#' @param nucleus_color A character (color of the nuclei staining)
 #' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
 #' threshold values if true and instead use a custom function to calculate
 #' the thresholds by looking at the density of cilium color pixels found in
@@ -34,6 +35,7 @@
 
 detectCilia <- function(input_dir = NULL,
                         cilium_color = "red",
+                        nucleus_color = "blue",
                         threshold_by_density_of_cilium_pixels = FALSE,
                         threshold_find = 0.01,
                         threshold_connect = 0.005,
@@ -130,10 +132,30 @@ detectCilia <- function(input_dir = NULL,
   }
   
   # Save only color layer of cilia
-  image_cilia <- editImage(image = image_stack, cilium_color = cilium_color,
+  image_cilia <- editImage(image = image_stack, object_color = cilium_color,
                            threshold = threshold_find)
   
+  # Find the nuclei --------------------------------------------------------
   
+  # Save only color layer of nuclei
+  image_nuclei <- getLayer(image = image_stack, layer = nucleus_color)
+  image_nuclei <- Image(image_nuclei)
+  
+  # blur the image
+  image_nuclei <- gblur(image_nuclei, sigma = 3)
+  
+  #display(image_nuclei)
+  
+  nmask <- thresh(image_nuclei, w=100, h=100, offset=0.05)
+  nmask <- opening(nmask, makeBrush(5, shape='disc'))
+  nmask <- fillHull(nmask)
+  nmask <- bwlabel(nmask)
+
+  # Count number of cells
+  nucNo <- max(bwlabel(nmask))
+  
+  #display(nmask)
+
   # Save information where there have been found cilia ---------------------
   list_of_cilium_points <- which(image_cilia > 0, arr.ind = T)
   
@@ -305,7 +327,7 @@ detectCilia <- function(input_dir = NULL,
     
     # Load image with the threshold_connect
     image_cilia_connect <- editImage(image = image,
-                                     cilium_color = cilium_color,
+                                     object_color = cilium_color,
                                      threshold = threshold_connect)
     
     # Get positions of the cilia
@@ -453,6 +475,23 @@ detectCilia <- function(input_dir = NULL,
                   bits.per.sample = 8L, compression = "none",
                   reduce = TRUE)
   
+  
+  # save stack with marked nuclei
+  
+  # Add border of nuclei and save file
+  Image_stack_numbers <- Image(image_stack_numbers)
+  colorMode(Image_stack_numbers) <- "color"
+  
+  Image_stack_numbers <- paintObjects(x = nmask, tgt = Image_stack_numbers, col='#ff00ff')
+  #display(segmented)
+  
+  # Display the number of nuclei
+  print(paste("Number of cells: ", nucNo, sep=""))
+  
+  tiff::writeTIFF(what = Image_stack_numbers,
+                  where = paste(output_dir, "stack_cilia_all_numbers_nuclei.tif", sep = ""),
+                  bits.per.sample = 8L, compression = "none",
+                  reduce = TRUE)
   
   return(df_cilium_information)
 }

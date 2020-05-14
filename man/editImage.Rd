@@ -7,12 +7,12 @@
 \alias{imageEdit}
 \title{editImage}
 \usage{
-editImage(image = NULL, cilium_color = NULL, threshold = NULL)
+editImage(image = NULL, object_color = NULL, threshold = NULL)
 }
 \arguments{
 \item{image}{An three-dimensional array of numbers between 0 and 1}
 
-\item{cilium_color}{A character (color of the staining of the cilia)}
+\item{object_color}{A character (color of the staining of the object)}
 
 \item{threshold}{A number (that determines the brightness of a pixel to
 be counted as cilium pixel)}

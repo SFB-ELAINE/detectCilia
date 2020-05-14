@@ -7,12 +7,12 @@
 #' @author Kai Budde
 #' @export editImage
 #' @param image An three-dimensional array of numbers between 0 and 1
-#' @param cilium_color A character (color of the staining of the cilia)
+#' @param object_color A character (color of the staining of the object)
 #' @param threshold A number (that determines the brightness of a pixel to
 #' be counted as cilium pixel)
 
 editImage <- function(image = NULL,
-                      cilium_color = NULL,
+                      object_color = NULL,
                       threshold = NULL){
 
   # Default values for missing arguments -----------------------------------
@@ -24,19 +24,19 @@ editImage <- function(image = NULL,
     threshold <- 0.1
   }
 
-  if(missing(cilium_color)){
-    cilium_color <- "blue"
+  if(missing(object_color)){
+    object_color <- "blue"
   }
 
-  cilium_color <- tolower(cilium_color)
+  object_color <- tolower(object_color)
 
   # Extract the layer of the cilia -----------------------------------------
 
-  if(cilium_color == "red" | cilium_color == "r"){
+  if(object_color == "red" | object_color == "r"){
     image_cilia <- image[,,1]
-  }else if(cilium_color == "green" | cilium_color == "g"){
+  }else if(object_color == "green" | object_color == "g"){
     image_cilia <- image[,,2]
-  }else if(cilium_color == "blue" | cilium_color == "b"){
+  }else if(object_color == "blue" | object_color == "b"){
     image_cilia <- image[,,3]
   }else{
     print(paste("Please enter a color (red, green or blue) for the cilia.",

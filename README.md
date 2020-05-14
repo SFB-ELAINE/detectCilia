@@ -1,6 +1,6 @@
 # detectCilia
 R package to detect cilia and other colored structures in confocal
-fluorescence microscopy images
+fluorescence microscopy images. Works with R 4.0.0.
 
 ## Code for using the R package
 
@@ -8,8 +8,8 @@ fluorescence microscopy images
 ```R
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde
-# Last changed: 2020/02/13
-# Version of detectCilia: 0.4.1
+# Last changed: 2020/05/14
+# Version of detectCilia: 0.4.2
 
 
 # Delete everything in the environment
@@ -61,11 +61,19 @@ new.packages <- list.of.packages[
 if(length(new.packages)) install.packages(new.packages)
 require(devtools)
 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.11")
+BiocManager::install("EBImage")
+library(EBImage)
+# If you encounted problems, see https://megapteraphile.wordpress.com/2019/09/29/challenges-installing-ebimage-in-r/
+
+
 # Install the R package for producing stacks of the images
 devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
 require(stackImages)
 
-devtools::install_github("SFB-ELAINE/detectCilia", ref = "v0.4.1") 
+devtools::install_github("SFB-ELAINE/detectCilia", ref = "v0.4.2") 
 library(detectCilia)
 
 

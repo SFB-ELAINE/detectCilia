@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2020/02/05
+# Last changed: 2020/05/14
 
 
 # Delete everything in the environment
@@ -13,13 +13,14 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-#input_dir <- "tests/images6"
+input_dir <- "tests/images6"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_6"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_7"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_8"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_9"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_10"
 input_dir <- "/home/kb/Unibox Rostock/Rohbilder + Export - Zen (Clemens Sehlke)/190818_EV38_2_Kollagen mit FKS_zstack_7"
+input_dir <- "inst/testImages"
 
 # Size of a pixel in micrometer
 pixel_size <- 0.21964505359339307678791073625022 # in \mu m
@@ -27,6 +28,7 @@ pixel_size <- 0.21964505359339307678791073625022 # in \mu m
 # Distance between layer in micrometer
 sclice_distance <- 0.436356# in \mu m
 cilium_color <- "red"
+nucleus_color <- "blue"
 
 # Use internal calculation of threshold by looking at cilium color pixel
 # density
@@ -56,7 +58,7 @@ devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
 require(stackImages)
 
 # Check package
-#check()
+check()
 
 # Document package
 document()
