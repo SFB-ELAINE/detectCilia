@@ -16,7 +16,9 @@ detectCilia(
   vicinity = NULL,
   min_size = 3,
   max_size = 100,
-  number_size_factor = NULL
+  number_size_factor = NULL,
+  pixel_size = NULL,
+  slice_distance = NULL
 )
 }
 \arguments{
@@ -46,6 +48,11 @@ detected)}
 detected)}
 
 \item{number_size_factor}{A number (factor for resizing the digit image)}
+
+\item{pixel_size}{A number (size of one pixel in micrometer)}
+
+\item{slice_distance}{A number (distance of two consecutive slices in
+z-direction in micrometer)}
 }
 \description{
 Main function for detecting cilia in images

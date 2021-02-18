@@ -87,6 +87,12 @@ addNumberToImage <- function(image = NULL,
   if(tolower(number_color) == "red"){
     image_layer <- 1
   }
+  if(tolower(number_color) == "green"){
+    image_layer <- 2
+  }
+  if(tolower(number_color) == "blue"){
+    image_layer <- 3
+  }
   
   # Adapt the starting position so the digits will be completely seen ---
   

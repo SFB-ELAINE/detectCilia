@@ -7,9 +7,9 @@
 #' @export summarizeCiliaInformation
 #' @import graphics
 #' @import stats
-#' @param df_cilium_information A data fram
+#' @param df_cilium_information A data frame
 #' @param pixel_size A number (size of one pixel in micrometer)
-#' @param sclice_distance A number (distance of two consecutive slices in
+#' @param slice_distance A number (distance of two consecutive slices in
 #' z-direction in micrometer)
 #' @examples
 #' \dontrun{
@@ -23,7 +23,7 @@
 summarizeCiliaInformation <- function(
   df_cilium_information = df_cilium_information,
   pixel_size = pixel_size,
-  sclice_distance = sclice_distance) {
+  slice_distance = slice_distance) {
 
   number_of_cilia <- unique(df_cilium_information$ciliumNumber)
 
@@ -41,7 +41,7 @@ summarizeCiliaInformation <- function(
     lower_layer <- min(df_cilium_projection$layer[df_cilium_projection$layer > 0])
     upper_layer <- max(df_cilium_projection$layer[df_cilium_projection$layer > 0])
 
-    vertical_length <- (upper_layer-lower_layer) * sclice_distance # in \mu m
+    vertical_length <- (upper_layer-lower_layer) * slice_distance # in \mu m
 
     # Find pixels of z-projection ##
     # Only keep non-duplicated columns row and col
@@ -77,8 +77,8 @@ summarizeCiliaInformation <- function(
       linear_model <- lm(col ~ row, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
 
-      plot(df_cilium_projection$col, -df_cilium_projection$row)
-      abline(linear_model$coefficients[1]/linear_model$coefficients[2], -1/linear_model$coefficients[2])
+      #plot(df_cilium_projection$col, -df_cilium_projection$row)
+      #abline(linear_model$coefficients[1]/linear_model$coefficients[2], -1/linear_model$coefficients[2])
 
       # Length of the line
       x2 <- max(df_cilium_projection$row)

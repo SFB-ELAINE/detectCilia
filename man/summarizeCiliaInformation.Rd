@@ -9,15 +9,15 @@
 summarizeCiliaInformation(
   df_cilium_information = df_cilium_information,
   pixel_size = pixel_size,
-  sclice_distance = sclice_distance
+  slice_distance = slice_distance
 )
 }
 \arguments{
-\item{df_cilium_information}{A data fram}
+\item{df_cilium_information}{A data frame}
 
 \item{pixel_size}{A number (size of one pixel in micrometer)}
 
-\item{sclice_distance}{A number (distance of two consecutive slices in
+\item{slice_distance}{A number (distance of two consecutive slices in
 z-direction in micrometer)}
 }
 \description{
