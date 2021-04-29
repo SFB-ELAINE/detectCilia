@@ -58,8 +58,8 @@ editImage <- function(image = NULL,
     threshold <- 0
   }
   
-  image_cilia[,][image_cilia[,] >= threshold] <- 1
-  image_cilia[,][image_cilia[,] < threshold] <- 0
+  image_cilia[image_cilia > threshold] <- 1
+  image_cilia[image_cilia <= threshold] <- 0
 
   return(image_cilia)
 }

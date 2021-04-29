@@ -43,15 +43,17 @@ addNumberToImage <- function(image = NULL,
   # Add the digits to the image --------------------------------------------
   image_with_numbers <- image
   
-  # Go through all digit images and save the matrices in a list ---
+  # Go through all digit images and save the matrices in a list ------------
   for(i in 1:number_of_digits){
     digit <- list_of_digits[i]
     
     digit_path <- paste(digit, ".tiff", sep="")
     digit_path <- system.file("digits", digit_path, package = "detectCilia")
     
-    digit_image <- tiff::readTIFF(source = digit_path, convert = TRUE,
-                            info = FALSE)
+    #digit_image <- tiff::readTIFF(source = digit_path, convert = TRUE,
+    #                        info = FALSE)
+    digit_image <- EBImage::readImage(files = digit_path, type = "tiff")
+    digit_image <- as.array(digit_image)
     
     # Only keep the black layer
     digit_image <- digit_image[,,4]
@@ -79,8 +81,8 @@ addNumberToImage <- function(image = NULL,
     digit_images[[i]] <- digit_image
     
     # Save dimensions of all digits
-    digits_size_x <- max(digits_size_x, dim(digit_image)[1])
-    digits_size_y <- digits_size_y + dim(digit_image)[2]
+    digits_size_x <- digits_size_x + dim(digit_image)[1]
+    digits_size_y <- max(digits_size_y, dim(digit_image)[2])
   }
   
   # Choose layer of image where the number should be added to
@@ -94,14 +96,14 @@ addNumberToImage <- function(image = NULL,
     image_layer <- 3
   }
   
-  # Adapt the starting position so the digits will be completely seen ---
+  # Adapt the starting position so all digits will be completely seen ---
   
-  # Right side
+  # Vertical side
   if( (pos_y + digits_size_y) > dim(image_with_numbers)[2] ){
     pos_y <- dim(image_with_numbers)[2] - digits_size_y
   }
   
-  # Lower side
+  # Horizontal side
   if( (pos_x + digits_size_x) > dim(image_with_numbers)[1]){
     pos_x <- dim(image_with_numbers)[1] - digits_size_x
   }
@@ -122,7 +124,8 @@ addNumberToImage <- function(image = NULL,
     }
     
     # Adapt starting position for the next digit
-    pos_y <- pos_y + digit_image_size_y
+    #pos_y <- pos_y + digit_image_size_y
+    pos_x <- pos_x + digit_image_size_x
   }
 
   return(image_with_numbers)

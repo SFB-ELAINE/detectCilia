@@ -7,7 +7,8 @@
 \title{detectCilia}
 \usage{
 detectCilia(
-  input_dir = NULL,
+  input_dir_tif = NULL,
+  input_file_czi = NULL,
   cilium_color = "red",
   nucleus_color = "blue",
   threshold_by_density_of_cilium_pixels = FALSE,
@@ -18,11 +19,15 @@ detectCilia(
   max_size = 100,
   number_size_factor = NULL,
   pixel_size = NULL,
-  slice_distance = NULL
+  slice_distance = NULL,
+  nuc_mask_width_heigth = 100
 )
 }
 \arguments{
-\item{input_dir}{A character (directory that contains all images)}
+\item{input_dir_tif}{A character (directory that contains z-stack sclices
+in the tif format)}
+
+\item{input_file_czi}{A character (a file with the z-stack image as czi)}
 
 \item{cilium_color}{A character (color of the cilium staining)}
 
@@ -53,6 +58,9 @@ detected)}
 
 \item{slice_distance}{A number (distance of two consecutive slices in
 z-direction in micrometer)}
+
+\item{nuc_mask_width_heigth}{A number (width and heigth for detecting
+nuclei)}
 }
 \description{
 Main function for detecting cilia in images
