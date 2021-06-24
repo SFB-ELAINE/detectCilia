@@ -427,6 +427,95 @@ detectCilia <- function(input_dir_tif = NULL,
   
   if(length(list_of_cilium_points) == 0){
     print("No cilium found.")
+    
+    # (The next few lines are also found in the end of this function)
+    Image_stack_histogram_equalization_normalized <-
+      EBImage::normalize(Image_stack_histogram_equalization)
+    
+    EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+                        files = paste(output_dir, input_file_name,
+                                      "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                      sep = ""),
+                        bits.per.sample = 8,
+                        type = "tiff")
+    
+    # Save all parameters in a csv
+    
+    # Original parameter
+    function_call <- paste(deparse(match.call()), collapse = "")
+    function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
+    df_OriginalParameterList <- data.frame(
+      "parameterNames" = "Function call",
+      "parameterValues" = function_call)
+    
+    # Final parameter values
+    parameters <- as.list(match.call())
+    parameter_names <- names(parameters)[names(parameters) != ""]
+    
+    # Add "threshold_find" and "threshold_connect" to parameterlist if they
+    # are not already in the list
+    if( ! ("threshold_find" %in% parameter_names) ){
+      parameter_names <-  c(parameter_names, "threshold_find")
+    }
+    if( ! ("threshold_connect" %in% parameter_names) ){
+      parameter_names <-  c(parameter_names, "threshold_connect")
+    }
+    
+    df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+                                        "parameterValues" = NA)
+    
+    # Go through every parameterName and save current value
+    for(i in 1:length(parameter_names)){
+      df_FinalParameterList$parameterValues[
+        df_FinalParameterList$parameterNames == parameter_names[i]] <-
+        as.character(get(parameter_names[i]))
+    }
+    rm(i)
+    
+    # Combine both data frames
+    df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    
+    if(!is.null(df_parameterList)){
+      write.csv(df_parameterList,
+                file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+      write.csv2(df_parameterList,
+                 file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Save the number of nuclei
+    df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
+    if(!is.null(df_number_nuclei)){
+      write.csv(df_number_nuclei,
+                file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
+      write.csv2(df_number_nuclei,
+                 file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Get the length of the cilia
+    df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
+                                    "horizontal_length" = 0,
+                                    "total_length" = 0)
+    
+    if(!is.null(df_cilium_summary)){
+      write.csv(df_cilium_summary,
+                file = paste(output_dir, "cilium_summary.csv", sep=""), row.names = FALSE)
+      
+      write.csv2(df_cilium_summary,
+                 file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Save an excel sheet that contains information of all csv files
+    # in separate sheets
+    write.xlsx(df_number_nuclei,
+               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+               sheetName = "NucleiNumber", row.names = FALSE,
+               append = TRUE)
+    
+    write.xlsx(df_parameterList,
+               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+               sheetName = "ParameterList", row.names = FALSE,
+               append = TRUE)
+    
     return(NULL)
   }
   
@@ -535,11 +624,100 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   rm(i)
   
-  # Return function with NULL value because no cilium could be found -------
+  # Return function because no cilium could be found -----------------------
   if(length(unique(df_cilium_points$ciliumNumber)) == 0){
-    print(paste("Please change your input parameter values. ",
+    print(paste("Please change your input parameter values or image file. ",
                 "No cilium could be found.",
                 sep=""))
+    
+    # (The next few lines are also found in the end of this function)
+    Image_stack_histogram_equalization_normalized <-
+      EBImage::normalize(Image_stack_histogram_equalization)
+    
+    EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+                        files = paste(output_dir, input_file_name,
+                                      "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                      sep = ""),
+                        bits.per.sample = 8,
+                        type = "tiff")
+    
+    # Save all parameters in a csv
+    
+    # Original parameter
+    function_call <- paste(deparse(match.call()), collapse = "")
+    function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
+    df_OriginalParameterList <- data.frame(
+      "parameterNames" = "Function call",
+      "parameterValues" = function_call)
+    
+    # Final parameter values
+    parameters <- as.list(match.call())
+    parameter_names <- names(parameters)[names(parameters) != ""]
+    
+    # Add "threshold_find" and "threshold_connect" to parameterlist if they
+    # are not already in the list
+    if( ! ("threshold_find" %in% parameter_names) ){
+      parameter_names <-  c(parameter_names, "threshold_find")
+    }
+    if( ! ("threshold_connect" %in% parameter_names) ){
+      parameter_names <-  c(parameter_names, "threshold_connect")
+    }
+    
+    df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+                                        "parameterValues" = NA)
+    
+    # Go through every parameterName and save current value
+    for(i in 1:length(parameter_names)){
+      df_FinalParameterList$parameterValues[
+        df_FinalParameterList$parameterNames == parameter_names[i]] <-
+        as.character(get(parameter_names[i]))
+    }
+    rm(i)
+    
+    # Combine both data frames
+    df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    
+    if(!is.null(df_parameterList)){
+      write.csv(df_parameterList,
+                file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+      write.csv2(df_parameterList,
+                 file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Save the number of nuclei
+    df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
+    if(!is.null(df_number_nuclei)){
+      write.csv(df_number_nuclei,
+                file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
+      write.csv2(df_number_nuclei,
+                 file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Get the length of the cilia
+    df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
+                                    "horizontal_length" = 0,
+                                    "total_length" = 0)
+    
+    if(!is.null(df_cilium_summary)){
+      write.csv(df_cilium_summary,
+                file = paste(output_dir, "cilium_summary.csv", sep=""), row.names = FALSE)
+      
+      write.csv2(df_cilium_summary,
+                 file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
+    }
+    
+    # Save an excel sheet that contains information of all csv files
+    # in separate sheets
+    write.xlsx(df_number_nuclei,
+               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+               sheetName = "NucleiNumber", row.names = FALSE,
+               append = TRUE)
+    
+    write.xlsx(df_parameterList,
+               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+               sheetName = "ParameterList", row.names = FALSE,
+               append = TRUE)
+    
     return(NULL)
   }
   
@@ -836,6 +1014,14 @@ detectCilia <- function(input_dir_tif = NULL,
   EBImage::writeImage(x = Image_stack_numbers,
                       files = paste(output_dir, input_file_name,
                                     "_stack_cilia_all_numbers_nuclei.tif",
+                                    sep = ""),
+                      bits.per.sample = 8,
+                      type = "tiff")
+  
+  Image_stack_histogram_equalization_normalized <- EBImage::normalize(Image_stack_histogram_equalization)
+  EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+                      files = paste(output_dir, input_file_name,
+                                    "_stack_cilia_all_histogram_equalized_normalized.tif",
                                     sep = ""),
                       bits.per.sample = 8,
                       type = "tiff")

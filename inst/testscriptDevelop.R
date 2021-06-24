@@ -1,6 +1,8 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2021/04/29
+# Last changed: 2021/06/23
+
+# TODO: Cilien mit vielen Löchern, wenn man die Pixel umrandet, müssen entfernt werden
 
 
 # Delete everything in the environment
@@ -13,8 +15,9 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-input_dir <- "tests/clemens"
-input_dirs <- "tests/clemens"
+input_dir <- "E:/PhD/Daten/Cilia/allImages"
+input_dir <- "E:/PhD/Daten/Cilia/test"
+#input_dirs <- "tests/clemens"
 
 #input_dirs <- c(
   #"/home/kb/Documents/projects/2020CiliaImages/Neue_Auswertung_Cilien/181004_tiff/181004_ES3_367_x63_zstack_1",
@@ -99,11 +102,11 @@ input_dirs <- "tests/clemens"
 
 # Size of a pixel in micrometer
 #pixel_size <- 0.21964505359339307678791073625022 # in \mu m
-pixel_size <- 0.109823521291513 # in \mu m
+#pixel_size <- 0.109823521291513 # in \mu m
 
 # Distance between layer in micrometer
 #sclice_distance <- 0.436356 # in \mu m
-slice_distance <- 0.281 # in \mu m
+#slice_distance <- 0.281 # in \mu m
 #slice_distance <- 0.429804210436651 # in \mu m
 cilium_color <- "red"
 nucleus_color <- "blue"
@@ -173,7 +176,7 @@ require(readCzi)
 # Load package to use it
 load_all()
 
-## FIRST EXAMPLE DIRECRY FOR CZI IMAGES ------------------------------------
+## FIRST EXAMPLE DIRECTORY FOR CZI IMAGES ------------------------------------
 
 # Data frame with certain parameter values
 file_names <- list.files(path = input_dir)
@@ -181,13 +184,43 @@ file_names_czi <- file_names[grepl("czi", file_names)]
 file_names_czi <- paste(input_dir, file_names_czi, sep="/")
 number_of_czi_files <- length(file_names_czi)
 
-number_of_dirs <- length(number_of_czi_files)
+#number_of_dirs <- length(number_of_czi_files)
 df_results <- data.frame("czi file" = file_names_czi,
                          "threshold_find" = rep(-99, number_of_czi_files),
                          "threshold_connect" = rep(-99, number_of_czi_files))
 
+# Get metadata
+
+
+for(i in 1:number_of_czi_files){
+  if(i==1){
+    df_metadata <- readCziMetadata(input_file = file_names_czi[i])
+  }else{
+    df_dummy <- readCziMetadata(input_file = file_names_czi[i])
+    df_metadata <- rbind(df_metadata, df_dummy)
+    rm(df_dummy)
+  }
+}
+rm(i)
+
+write.csv(x = df_metadata,
+          file = paste(input_dir,"/","summary_metadata_en.csv", sep=""),
+          row.names = FALSE)
+write.csv2(x = df_metadata,
+           file = paste(input_dir,"/","summary_metadata_de.csv", sep=""),
+           row.names = FALSE)
+
 # Obtain all positions in every z-layer and lengths of all cilia
 for(i in 1:number_of_czi_files){
+  
+  if(df_metadata$scaling_x[i] == df_metadata$scaling_y[i]){
+    pixel_size <- df_metadata$scaling_x[i]
+  }else{
+    print("Sclaing is wrong.")
+  }
+  
+  slice_distance <- df_metadata$scaling_z[i]
+  
 
   output_list <- detectCilia(input_file_czi = file_names_czi[i],
                              cilium_color = cilium_color,
@@ -200,15 +233,16 @@ for(i in 1:number_of_czi_files){
                              slice_distance = slice_distance)
 
   if(!is.null(output_list)){
-    df_results$threshold_find[df_results$Directory == input_dir] <-
+    df_results$threshold_find[i] <-
       output_list$df_parameterlist$parameterValues[
         output_list$df_parameterlist$parameterNames == "threshold_find"]
-    df_results$threshold_connect[df_results$Directory == input_dir] <-
+    df_results$threshold_connect[i] <-
       output_list$df_parameterlist$parameterValues[
         output_list$df_parameterlist$parameterNames == "threshold_connect"]
   }
 
 }
+rm(i)
 
 
 # ## FIRST EXAMPLE DIRECRY FOR TIF IMAGES ------------------------------------
