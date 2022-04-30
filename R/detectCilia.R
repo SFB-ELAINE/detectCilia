@@ -20,6 +20,8 @@
 #' @param input_file_czi A character (a file with the z-stack image as czi)
 #' @param cilium_color A character (color of the cilium staining)
 #' @param nucleus_color A character (color of the nuclei staining)
+#' @param projection_method A character (defines the method for the z projection:
+#' either "mean" or "max")
 #' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
 #' threshold values if true and instead use a custom function to calculate
 #' the thresholds by looking at the density of cilium color pixels found in
@@ -44,16 +46,17 @@ detectCilia <- function(input_dir_tif = NULL,
                         input_file_czi = NULL,
                         cilium_color = "red",
                         nucleus_color = "blue",
-                        threshold_by_density_of_cilium_pixels = FALSE,
-                        threshold_find = 0.01,
-                        threshold_connect = 0.005,
+                        projection_method = "mean",
+                        threshold_by_density_of_cilium_pixels = TRUE,
+                        threshold_find = NULL,
+                        threshold_connect = NULL,
                         vicinity = NULL,
-                        min_size = 3,
-                        max_size = 100,
+                        min_size = NULL,
+                        max_size = NULL,
                         number_size_factor = NULL,
                         pixel_size = NULL,
                         slice_distance = NULL,
-                        nuc_mask_width_heigth = 100) {
+                        nuc_mask_width_heigth = NULL) {
   
   
   # Basics and sourcing functions ------------------------------------------
@@ -66,11 +69,6 @@ detectCilia <- function(input_dir_tif = NULL,
   # ---------------------- Data acquisition ------------------------------ #
   # ---------------------------------------------------------------------- #
   
-  # Parameter input --------------------------------------------------------
-  
-  if(is.null(vicinity)){
-    vicinity <- 1
-  }
   # Data input -------------------------------------------------------------
   
   # Input directory must be submitted. If not: close function call.
@@ -130,6 +128,16 @@ detectCilia <- function(input_dir_tif = NULL,
   # Read image data an put into one array if necessary
   if(image_format == "tif"){
     
+    # Check whether requried parameter values are given
+    if(is.null(pixel_size)){
+      print("Please call the function with specifying pixel_size in um.")
+      return()
+    }
+    if(is.null(slice_distance)){
+      print("Please call the function with specifying slice_distance in um.")
+      return()
+    }
+    
     # i = 1 .. n go through all slices and append them to image_data -------
     print("Finding cilia in every layer.")
     for(i in 1:length(file_names_tif)){
@@ -144,7 +152,7 @@ detectCilia <- function(input_dir_tif = NULL,
       #                        info = FALSE)
       image <- EBImage::readImage(files = image_path, type = "tiff")
       
-    
+      
       # Find the layer name (The file name should be of the form
       # "..z01..","..z02..", ... for files obtained from ZEN oder of the
       # form "0001", "0002", ... for files obtained from ImageJ)
@@ -177,12 +185,89 @@ detectCilia <- function(input_dir_tif = NULL,
     rm(i)
     
   }else if(image_format == "czi"){
+    
+    # Read data
     image_data <- readCzi::readCzi(input_file = input_file_czi)
     Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+    
+    # Read metadata and get missing parameter values
+    df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi)
+    
+    if(df_metadata$scaling_x == df_metadata$scaling_y){
+      pixel_size_dummy <- df_metadata$scaling_x
+      if(is.null(pixel_size)){
+        pixel_size <- pixel_size_dummy
+      }else if(pixel_size != pixel_size_dummy){
+        print("The given pixel size is different to the one obtained from the metadata.")
+        return()
+      }
+    }else{
+      print("Scaling is wrong.")
+    }
+    if(is.null(slice_distance)){
+      slice_distance <- df_metadata$scaling_z
+    }else{
+      if(slice_distance != df_metadata$scaling_z){
+        print("The given slize distance is different to the one obtained from the metadata.")
+        return()
+      }
+    }
+  }
+  
+  # Missing parameter input ------------------------------------------------
+
+  
+  # Determine min and max sizes of a primary cilium
+  # (it can be between 1um and 5um long)
+  
+  max_cilium_area_in_um2 <- 5*5
+  min_cilium_area_in_um2 <- 1*1
+  
+  if(is.null(min_size)){
+    min_size <- ceiling(x = min_cilium_area_in_um2 / pixel_size)
+  }
+  
+  if(is.null(max_size)){
+    max_size <- ceiling(x = max_cilium_area_in_um2 / pixel_size)
+  }
+  
+  rm(list = c("max_cilium_area_in_um2", "min_cilium_area_in_um2"))
+  
+  # Determine the vicinity to connect cilium points
+  if(is.null(vicinity)){
+    vicinity <- ceiling(x = min_size / 2)
+  }
+  
+  # Determine the nuclei mask area
+  # (We assume a nucleus area of 10um*10um)
+  nuc_length <- 20
+  
+  if(is.null(nuc_mask_width_heigth)){
+    nuc_mask_width_heigth <- ceiling(nuc_length/pixel_size)
+  }
+  
+  # Determine the size factor for printing numbers on the images
+  # -> will be done automatically in the function!
+  
+  if(is.null(number_size_factor)){
+    factor <- 0.15/ 1024
+    number_size_factor <- factor * dim(x = image_data)[1]
+    number_size_factor <- round(x = number_size_factor, digits = 1)
+    rm(factor)
+  }
+  
+  if(!threshold_by_density_of_cilium_pixels){
+    if(is.null(threshold_find)){
+      threshold_find <- 0.01
+    }
+    if(is.null(threshold_connect)){
+      threshold_connect <- 0.005
+    }
   }
   
   
-  # Stack images
+  # Stack images -----------------------------------------------------------
+  
   # if(image_format == "tif"){
   #   # Get a stack of all layers and recalculate thresholds if required -----
   #   #image_stack <- stackImages::stackImages(input_dir = input_dir,
@@ -196,21 +281,35 @@ detectCilia <- function(input_dir_tif = NULL,
   #   Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
   #   
   # }else if(image_format == "czi"){
-  #   
-    # Create empty stack image
-    image_stack <- array(0, dim = dim(Image_data)[1:3])
-    #Image_stack <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
-    #                              colormode = "Color")
+
+   
+  # Create empty stack image
+  image_stack <- array(0, dim = dim(Image_data)[1:3])
+  #Image_stack <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
+  #                              colormode = "Color")
+  
+  if(projection_method == "max"){
+    
+    # Stack with max values
+    for(i in 1:dim(image_data)[3]){
+      image_stack[,,i] = apply(image_data[,,i,], c(1,2), max)
+    }
+    
+  }else if(projection_method == "mean"){
     
     # Stack with mean values
     for(i in 1:dim(image_data)[3]){
       image_stack[,,i] = apply(image_data[,,i,], c(1,2), mean)
     }
     
-    Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
-    
-    rm(i)
-    
+  }else{
+    print("Please choose either max or mean as zstack projection method.")
+  }
+  
+  Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
+  
+  rm(i)
+  
   # }
   
   # Enhance contrast of stack image
@@ -225,7 +324,7 @@ detectCilia <- function(input_dir_tif = NULL,
   #Image_nuclei[Image_nuclei < quantile(Image_nuclei, 0.1)] <- 0
   
   # Blur the image
-  Image_nuclei <-  medianFilter(x = Image_nuclei, size = 5)
+  Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = 5)
   #Image_nuclei <- EBImage::gblur(Image_nuclei, sigma = 3)
   
   # Make the image brighter
@@ -251,7 +350,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   #display(nmask)
   
-  # Record all nuclei that are at the edges of the image
+  # Record all nuclei that are at the borders of the image
   left  <- table(nmask[1, 1:dim(nmask)[2]])
   top   <- table(nmask[1:dim(nmask)[1],1])
   right <- table(nmask[dim(nmask)[1], 1:dim(nmask)[2]])
@@ -281,7 +380,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # barplot(table(nmask)[-1])
   
   nmask <-  EBImage::watershed( distmap(nmask), 1 )
-
+  
   table_nmask <- table(nmask)
   nuc_min_size <- 0.1*median(table_nmask[-1])
   
@@ -322,7 +421,17 @@ detectCilia <- function(input_dir_tif = NULL,
     
     #ratio_of_cilia_pixels <- nucNo * ((max_size - min_size) / 2) /
     #  (dim(Image_stack)[1]*dim(Image_stack)[2])
-    ratio_of_cilia_pixels <- nucNo * (2 * min_size) /
+    
+    # Calculate what ratio of pixels in the image is expected to belong to
+    # cilia (usually one per cell)
+    
+    # ratio_of_cilia_pixels <- nucNo * (2 * min_size) /
+    #   (dim(Image_stack)[1]*dim(Image_stack)[2])
+    
+    ratio_of_cilia_pixels <- nucNo * ((min_size + max_size)/2) /
+      (dim(Image_stack)[1]*dim(Image_stack)[2])
+    
+    ratio_of_cilia_pixels <- nucNo * sqrt(min_size*max_size) /
       (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     #ratio_of_cilia_pixels <- 1.1*ratio_of_cilia_pixels
@@ -425,6 +534,11 @@ detectCilia <- function(input_dir_tif = NULL,
   
   list_of_cilium_points <- which(Image_cilia > 0, arr.ind = T)
   
+  # # Switch names of row and col
+  # dimnames(list_of_cilium_points)[[2]] <- c("col", "row")
+  
+  
+  # Exit function because no cilium could be found -------------------------
   if(length(list_of_cilium_points) == 0){
     print("No cilium found.")
     
@@ -504,23 +618,26 @@ detectCilia <- function(input_dir_tif = NULL,
                  file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
     }
     
-    # Save an excel sheet that contains information of all csv files
-    # in separate sheets
-    write.xlsx(df_number_nuclei,
-               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-               sheetName = "NucleiNumber", row.names = FALSE,
-               append = TRUE)
-    
-    write.xlsx(df_parameterList,
-               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-               sheetName = "ParameterList", row.names = FALSE,
-               append = TRUE)
+    # # Save an excel sheet that contains information of all csv files
+    # # in separate sheets
+    # write.xlsx(df_number_nuclei,
+    #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+    #            sheetName = "NucleiNumber", row.names = FALSE,
+    #            append = TRUE)
+    # 
+    # write.xlsx(df_parameterList,
+    #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+    #            sheetName = "ParameterList", row.names = FALSE,
+    #            append = TRUE)
     
     return(NULL)
   }
   
   df_cilium_points <- data.frame(list_of_cilium_points)
-  df_cilium_points <- dplyr::arrange(df_cilium_points, row, col)
+  # df_cilium_points <- df_cilium_points[,c(2,1)]
+  
+  # df_cilium_points <- dplyr::arrange(df_cilium_points, row, col) #OLD
+  df_cilium_points <- dplyr::arrange(df_cilium_points, col, row) #NEW
   rm(list_of_cilium_points)
   
   # Delete all found pixels that have no other found pixels in the ---------
@@ -624,7 +741,43 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   rm(i)
   
-  # Return function because no cilium could be found -----------------------
+  # Delete all cilia that touch the border of the image --------------------
+  
+  # Coordinate system:
+  # x-axis: bottom left to bottom right
+  # y-axis: bottom left to top left
+  
+  # col: top to bottom (= from y_max to y=0)
+  # row: left to right (= from x=0 to x_max)
+  
+  
+  # Record all cilia that are at the borders of the image
+  dim_image_x <- dim(image_data)[2]
+  dim_image_y <- dim(image_data)[1]
+  
+  cilia_at_left_border    <- unique(df_cilium_points$ciliumNumber[df_cilium_points$row==1])
+  cilia_at_top_border     <- unique(df_cilium_points$ciliumNumber[df_cilium_points$col==1])
+  cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$row==dim_image_x])
+  cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$col==dim_image_y])
+  
+  if(length(cilia_at_left_border) > 0){
+    df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_left_border),]
+  }
+  if(length(cilia_at_top_border) > 0){
+    df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_top_border),]
+  }
+  if(length(cilia_at_right_border) > 0){
+    df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_right_border),]
+  }
+  if(length(cilia_at_bottom_border) > 0){
+    df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_bottom_border),]
+  }
+  
+  rm(list = c("cilia_at_left_border", "cilia_at_top_border",
+              "cilia_at_right_border", "cilia_at_bottom_border"))
+  
+  
+  # Exit function because no cilium could be found -------------------------
   if(length(unique(df_cilium_points$ciliumNumber)) == 0){
     print(paste("Please change your input parameter values or image file. ",
                 "No cilium could be found.",
@@ -706,17 +859,17 @@ detectCilia <- function(input_dir_tif = NULL,
                  file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
     }
     
-    # Save an excel sheet that contains information of all csv files
-    # in separate sheets
-    write.xlsx(df_number_nuclei,
-               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-               sheetName = "NucleiNumber", row.names = FALSE,
-               append = TRUE)
-    
-    write.xlsx(df_parameterList,
-               file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-               sheetName = "ParameterList", row.names = FALSE,
-               append = TRUE)
+    # # Save an excel sheet that contains information of all csv files
+    # # in separate sheets
+    # write.xlsx(df_number_nuclei,
+    #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+    #            sheetName = "NucleiNumber", row.names = FALSE,
+    #            append = TRUE)
+    # 
+    # write.xlsx(df_parameterList,
+    #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+    #            sheetName = "ParameterList", row.names = FALSE,
+    #            append = TRUE)
     
     return(NULL)
   }
@@ -883,25 +1036,32 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Save the stack with cilium information of all layers -------------------
   
+  # Save all locations of all cilia (independent from the z layer where it
+  # was found being found)
   df_cilium_all <- df_cilium_information
   df_cilium_all$rowcol <- paste(df_cilium_all$row,
                                 df_cilium_all$col,
                                 sep = ",")
+  # Keep only those coordinates that are not duplicated
+  # df_cilium_all <- df_cilium_all[
+    # df_cilium_all$rowcol == unique(df_cilium_all$rowcol),]
   df_cilium_all <- df_cilium_all[
-    df_cilium_all$rowcol == unique(df_cilium_all$rowcol),]
+    !duplicated(df_cilium_all$rowcol),]
+    
   df_cilium_all <- df_cilium_all[,-c(5)]
   df_cilium_all$layer <- -99
-  df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, row, col)
+  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, row, col) #old
+  df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, col, row) #NEW
   row.names(df_cilium_all) <- NULL
   
   # Add information of all cilium coordinates as layer -99 to data frame
   df_cilium_information <- rbind(df_cilium_information, df_cilium_all)
   
+  
   # Mark all cilia coordinates in a new stack image
   #Image_stack_copy  <- Image_stack
   #Image_stack_all_cilia <- Image_stack_copy
   Image_stack_cilia_connected <- Image_stack
-  
   
   for(k in 1:length(df_cilium_all$row)){
     Image_stack_cilia_connected[df_cilium_all$row[k], df_cilium_all$col[k], 1] <- 1
@@ -1093,6 +1253,10 @@ detectCilia <- function(input_dir_tif = NULL,
   # Combine both data frames
   df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
   
+  # TODO: Hier muss ich schauen, ob alle Parameter wirklich eingefügt werden und dafür sorgen, dass die folgenden Parameter als numeric value abgespeichert werden:
+  # vicinity, min_size, max_size, number_size_factor, pixel_size, slice_distance, threshold_find, threshold_connect
+  # Auch bei den anderen Speicherorten danach schauen!
+  
   if(!is.null(df_parameterList)){
     write.csv(df_parameterList,
               file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
@@ -1125,22 +1289,22 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   
-  # Save an excel sheet that contains information of all csv files
-  # in separate sheets
-  write.xlsx(df_cilium_summary,
-             file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-             sheetName = "CiliumInformation", row.names = FALSE,
-             append = FALSE)
-  
-  write.xlsx(df_number_nuclei,
-             file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-             sheetName = "NucleiNumber", row.names = FALSE,
-             append = TRUE)
-  
-  write.xlsx(df_parameterList,
-             file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
-             sheetName = "ParameterList", row.names = FALSE,
-             append = TRUE)
+  # # Save an excel sheet that contains information of all csv files
+  # # in separate sheets
+  # write.xlsx(df_cilium_summary,
+  #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+  #            sheetName = "CiliumInformation", row.names = FALSE,
+  #            append = FALSE)
+  # 
+  # write.xlsx(df_number_nuclei,
+  #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+  #            sheetName = "NucleiNumber", row.names = FALSE,
+  #            append = TRUE)
+  # 
+  # write.xlsx(df_parameterList,
+  #            file = paste(output_dir, "detect_cilium_summary.xlsx", sep=""),
+  #            sheetName = "ParameterList", row.names = FALSE,
+  #            append = TRUE)
   
   
   # Combine all data.frame to a list

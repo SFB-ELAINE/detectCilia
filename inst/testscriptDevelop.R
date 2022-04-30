@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia for development  ++++++++++
 # Author: Kai Budde
-# Last changed: 2021/06/23
+# Last changed: 2021/10/28
 
 # TODO: Cilien mit vielen Löchern, wenn man die Pixel umrandet, müssen entfernt werden
 
@@ -15,9 +15,10 @@ graphics.off()
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Directory of the images
-input_dir <- "E:/PhD/Daten/Cilia/allImages"
-input_dir <- "E:/PhD/Daten/Cilia/test"
-#input_dirs <- "tests/clemens"
+# input_dir <- "E:/PhD/Daten/Cilia/allImages"
+#input_dir <- "E:/PhD/Daten/Cilia/test"
+input_dir <- "tests/movedHere"
+file_name_czi <- "tests/test/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_6.czi"
 
 #input_dirs <- c(
   #"/home/kb/Documents/projects/2020CiliaImages/Neue_Auswertung_Cilien/181004_tiff/181004_ES3_367_x63_zstack_1",
@@ -100,6 +101,80 @@ input_dir <- "E:/PhD/Daten/Cilia/test"
   # "/home/kb/Documents/projects/2020CiliaImages/Neue_Auswertung_Cilien/190815_tiff/190815_EV38_2_Kollagen mit Asc u Dexa_63x_zstack_12"
 #  )
 
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# Load packages #############################################################
+
+list.of.packages <- c("BiocManager", "devtools", "dplyr", "reticulate")
+# Hier war vorher "zis" drin, was war das?
+# Hier war vorher "xlsx" drin. Warum?
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+if(!("EBImage" %in% utils::installed.packages())){
+  print("Installing EBImage.")
+  BiocManager::install("EBImage")
+  #BiocManager::install("MaxContrastProjection")
+}
+
+require(tiff)
+require(dplyr)
+require(devtools)
+require(EBImage)
+require(reticulate)
+
+# Read in Python package for reading czi files
+# (Users will be asked to install miniconda
+# when starting for the first time)
+if(! "czifile" %in% reticulate::py_list_packages()$package){
+  reticulate::py_install("czifile")
+}
+
+# # Install the R package for producing stacks of the images
+# if(!("stackImages" %in% installed.packages()[,"Package"])){
+#   #if(!installed.packages()[,"Version"][installed.packages()[,"Package"] == "stackImages"] == "0.1.4"){
+#     devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
+#   #}
+# }
+# require(stackImages)
+
+# Install the R package for reading czi images
+if(!("readCzi" %in% installed.packages()[,"Package"])){
+  #if(!installed.packages()[,"Version"][installed.packages()[,"Package"] == "readCzi"] == "0.1.2"){
+    devtools::install_github("SFB-ELAINE/readCzi", ref = "v0.1.2")
+  #}
+}
+require(readCzi)
+
+# Check package
+#check()
+
+# Document package
+#document()
+
+# Load package to use it
+load_all()
+
+## Smallest possible example for czi image ---------------------------------
+
+output_list <- detectCilia(input_file_czi = file_name_czi)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Add parameter information ------------------------------------------------
+
 # Size of a pixel in micrometer
 #pixel_size <- 0.21964505359339307678791073625022 # in \mu m
 #pixel_size <- 0.109823521291513 # in \mu m
@@ -124,57 +199,6 @@ max_size <- 150
 
 # Scaling factor for digit numbers
 number_size_factor <- 0.15
-
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-# Load packages #############################################################
-
-list.of.packages <- c("tiff", "dplyr", "devtools", "BiocManager", "xlsx", "zis", "reticulate")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
-
-if(!("EBImage" %in% utils::installed.packages())){
-  print("Installing EBImage.")
-  BiocManager::install("EBImage")
-  #BiocManager::install("MaxContrastProjection")
-}
-
-require(tiff)
-require(dplyr)
-require(devtools)
-require(EBImage)
-require(xlsx)
-require(reticulate)
-
-# Read in Python package for reading czi files
-# (Users will be asked to install miniconda
-# when starting for the first time)
-reticulate::py_install("czifile")
-
-# Install the R package for producing stacks of the images
-if(!("stackImages" %in% installed.packages()[,"Package"])){
-  #if(!installed.packages()[,"Version"][installed.packages()[,"Package"] == "stackImages"] == "0.1.4"){
-    devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
-  #}
-}
-require(stackImages)
-
-# Install the R package for reading czi images
-if(!("readCzi" %in% installed.packages()[,"Package"])){
-  #if(!installed.packages()[,"Version"][installed.packages()[,"Package"] == "readCzi"] == "0.1.2"){
-    devtools::install_github("SFB-ELAINE/readCzi", ref = "v0.1.2")
-  #}
-}
-require(readCzi)
-
-# Check package
-#check()
-
-# Document package
-#document()
-
-# Load package to use it
-load_all()
 
 ## FIRST EXAMPLE DIRECTORY FOR CZI IMAGES ------------------------------------
 
@@ -216,7 +240,7 @@ for(i in 1:number_of_czi_files){
   if(df_metadata$scaling_x[i] == df_metadata$scaling_y[i]){
     pixel_size <- df_metadata$scaling_x[i]
   }else{
-    print("Sclaing is wrong.")
+    print("Scaling is wrong.")
   }
   
   slice_distance <- df_metadata$scaling_z[i]
@@ -245,7 +269,7 @@ for(i in 1:number_of_czi_files){
 rm(i)
 
 
-# ## FIRST EXAMPLE DIRECRY FOR TIF IMAGES ------------------------------------
+# ## FIRST EXAMPLE DIRECTORY FOR TIF IMAGES ------------------------------------
 
 # # Data frame with certain parameter values
 # number_of_dirs <- length(input_dirs)

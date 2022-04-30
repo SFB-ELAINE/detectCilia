@@ -2,7 +2,6 @@
 
 export(addNumberToImage)
 export(detectCilia)
-export(detectObjects)
 export(editImage)
 export(getLayer)
 export(meanIntensityImage)

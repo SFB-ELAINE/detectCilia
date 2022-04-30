@@ -11,10 +11,11 @@ detectCilia(
   input_file_czi = NULL,
   cilium_color = "red",
   nucleus_color = "blue",
+  projection_method = "max",
   threshold_by_density_of_cilium_pixels = FALSE,
   threshold_find = 0.01,
   threshold_connect = 0.005,
-  vicinity = NULL,
+  vicinity = 3,
   min_size = 3,
   max_size = 100,
   number_size_factor = NULL,
@@ -32,6 +33,9 @@ in the tif format)}
 \item{cilium_color}{A character (color of the cilium staining)}
 
 \item{nucleus_color}{A character (color of the nuclei staining)}
+
+\item{projection_method}{A character (defines the method for the z projection:
+either "mean" or "max")}
 
 \item{threshold_by_density_of_cilium_pixels}{A Boolean (disregard the
 threshold values if true and instead use a custom function to calculate

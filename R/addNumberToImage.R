@@ -66,7 +66,7 @@ addNumberToImage <- function(image = NULL,
           min(dim(image_with_numbers)[1]/dim(digit_image)[1],
               dim(image_with_numbers)[2]/dim(digit_image)[2])
         
-        # It should be possible to have every number at least thirty times
+        # It should be possible to have every number at least 30 times
         # in every direction
         number_size_factor <- min_repeating_number / 30
       }
