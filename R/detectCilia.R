@@ -215,7 +215,7 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   # Missing parameter input ------------------------------------------------
-
+  
   
   # Determine min and max sizes of a primary cilium
   # (it can be between 1um and 5um long)
@@ -249,12 +249,12 @@ detectCilia <- function(input_dir_tif = NULL,
   # Determine the size factor for printing numbers on the images
   # -> will be done automatically in the function!
   
-  if(is.null(number_size_factor)){
-    factor <- 0.15/ 1024
-    number_size_factor <- factor * dim(x = image_data)[1]
-    number_size_factor <- round(x = number_size_factor, digits = 1)
-    rm(factor)
-  }
+  # if(is.null(number_size_factor)){
+  #   factor <- 0.15/ 1024
+  #   number_size_factor <- factor * dim(x = image_data)[1]
+  #   number_size_factor <- round(x = number_size_factor, digits = 12)
+  #   rm(factor)
+  # }
   
   if(!threshold_by_density_of_cilium_pixels){
     if(is.null(threshold_find)){
@@ -281,8 +281,8 @@ detectCilia <- function(input_dir_tif = NULL,
   #   Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
   #   
   # }else if(image_format == "czi"){
-
-   
+  
+  
   # Create empty stack image
   image_stack <- array(0, dim = dim(Image_data)[1:3])
   #Image_stack <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
@@ -534,9 +534,6 @@ detectCilia <- function(input_dir_tif = NULL,
   
   list_of_cilium_points <- which(Image_cilia > 0, arr.ind = T)
   
-  # # Switch names of row and col
-  # dimnames(list_of_cilium_points)[[2]] <- c("col", "row")
-  
   
   # Exit function because no cilium could be found -------------------------
   if(length(list_of_cilium_points) == 0){
@@ -634,28 +631,32 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   df_cilium_points <- data.frame(list_of_cilium_points)
+  
+  # Rename columns (x: from left to right, y: from top to bottom)
+  names(df_cilium_points) <- c("pos_x", "pos_y")
+  
   # df_cilium_points <- df_cilium_points[,c(2,1)]
   
   # df_cilium_points <- dplyr::arrange(df_cilium_points, row, col) #OLD
-  df_cilium_points <- dplyr::arrange(df_cilium_points, col, row) #NEW
+  df_cilium_points <- dplyr::arrange(df_cilium_points, pos_y, pos_x) #NEW
   rm(list_of_cilium_points)
   
   # Delete all found pixels that have no other found pixels in the ---------
   # neighborhood (+-1)
   df_cilium_points$possibleCilium <- FALSE
   
-  for(i in 1:length(df_cilium_points$row)){
+  for(i in 1:length(df_cilium_points$pos_x)){
     
-    .row_distance <- df_cilium_points$row[i] -
-      df_cilium_points$row
+    .pos_x_distance <- df_cilium_points$pos_x[i] -
+      df_cilium_points$pos_x
     
-    .col_distance <- df_cilium_points$col[i] -
-      df_cilium_points$col
+    .pos_y_distance <- df_cilium_points$pos_y[i] -
+      df_cilium_points$pos_y
     
-    .row_distance[abs(.row_distance) <= 1] <- 0
-    .col_distance[abs(.col_distance) <= 1] <- 0
+    .pos_x_distance[abs(.pos_x_distance) <= 1] <- 0
+    .pos_y_distance[abs(.pos_y_distance) <= 1] <- 0
     
-    .distance <- abs(.row_distance) + abs(.col_distance)
+    .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
     if(sum(.distance == 0) > 1){
       df_cilium_points$possibleCilium[.distance == 0] <- TRUE
     }
@@ -677,16 +678,16 @@ detectCilia <- function(input_dir_tif = NULL,
     
     # Calculate Distance of current pixel to all other pixel that might
     # be a Cilium
-    .row_distance <- df_cilium_points$row[i] -
-      df_cilium_points$row
+    .pos_x_distance <- df_cilium_points$pos_x[i] -
+      df_cilium_points$pos_x
     
-    .col_distance <- df_cilium_points$col[i] -
-      df_cilium_points$col
+    .pos_y_distance <- df_cilium_points$pos_y[i] -
+      df_cilium_points$pos_y
     
-    .row_distance[abs(.row_distance) <= vicinity] <- 0
-    .col_distance[abs(.col_distance) <= vicinity] <- 0
+    .pos_x_distance[abs(.pos_x_distance) <= vicinity] <- 0
+    .pos_y_distance[abs(.pos_y_distance) <= vicinity] <- 0
     
-    .distance <- abs(.row_distance) + abs(.col_distance)
+    .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
     
     # Get the cilium number (close cilium that has been detected)
     ciliumNumber_dummy <-
@@ -747,18 +748,17 @@ detectCilia <- function(input_dir_tif = NULL,
   # x-axis: bottom left to bottom right
   # y-axis: bottom left to top left
   
-  # col: top to bottom (= from y_max to y=0)
-  # row: left to right (= from x=0 to x_max)
-  
+  # row = pos_x: left to right (= from x=0 to x_max)
+  # col = pos_y: top to bottom (= from y_max to y=0)
   
   # Record all cilia that are at the borders of the image
   dim_image_x <- dim(image_data)[2]
   dim_image_y <- dim(image_data)[1]
   
-  cilia_at_left_border    <- unique(df_cilium_points$ciliumNumber[df_cilium_points$row==1])
-  cilia_at_top_border     <- unique(df_cilium_points$ciliumNumber[df_cilium_points$col==1])
-  cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$row==dim_image_x])
-  cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$col==dim_image_y])
+  cilia_at_left_border    <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==1])
+  cilia_at_top_border     <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==1])
+  cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==dim_image_x])
+  cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==dim_image_y])
   
   if(length(cilia_at_left_border) > 0){
     df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_left_border),]
@@ -891,9 +891,9 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Save image with marked cilia
   Image_stack_cilia <- Image_stack
-  for(k in 1:length(df_cilium_points$row)){
-    Image_stack_cilia[df_cilium_points$row[k], df_cilium_points$col[k], 1] <- 1
-    Image_stack_cilia[df_cilium_points$row[k], df_cilium_points$col[k], 2] <- 1
+  for(k in 1:length(df_cilium_points$pos_x)){
+    Image_stack_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 1] <- 1
+    Image_stack_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 2] <- 1
   }
   
   
@@ -949,6 +949,10 @@ detectCilia <- function(input_dir_tif = NULL,
                                            arr.ind = T)
     
     df_cilium_points_connect <- data.frame(list_of_cilium_points_connect)
+    
+    # Rename columns (x: from left to right, y: from top to bottom)
+    names(df_cilium_points_connect) <- c("pos_x", "pos_y")
+    
     rm(list_of_cilium_points_connect)
     
     if(nrow(df_cilium_points_connect) > 0){
@@ -961,16 +965,16 @@ detectCilia <- function(input_dir_tif = NULL,
       
       for(j in 1:nrow(df_cilium_points_connect)){
         
-        .row_distance <- df_cilium_points_connect$row[j] -
-          df_cilium_points$row
+        .pos_x_distance <- df_cilium_points_connect$pos_x[j] -
+          df_cilium_points$pos_x
         
-        .col_distance <- df_cilium_points_connect$col[j] -
-          df_cilium_points$col
+        .pos_y_distance <- df_cilium_points_connect$pos_y[j] -
+          df_cilium_points$pos_y
         
-        .row_distance[abs(.row_distance) <= vicinity] <- 0
-        .col_distance[abs(.col_distance) <= vicinity] <- 0
+        .pos_x_distance[abs(.pos_x_distance) <= vicinity] <- 0
+        .pos_y_distance[abs(.pos_y_distance) <= vicinity] <- 0
         
-        .distance <- abs(.row_distance) + abs(.col_distance)
+        .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
         
         # if zero is in distance, then the point of
         # df_cilium_points_connect[j] is in the vicinity of a "real"
@@ -1006,11 +1010,11 @@ detectCilia <- function(input_dir_tif = NULL,
                                        df_cilium_points_connect)
         
         # Save image with marked cilia
-        for(k in 1:length(df_cilium_points_connect$row)){
-          Image[df_cilium_points_connect$row[k],
-                df_cilium_points_connect$col[k], 1] <- 1
-          Image[df_cilium_points_connect$row[k],
-                df_cilium_points_connect$col[k], 2] <- 1
+        for(k in 1:length(df_cilium_points_connect$pos_x)){
+          Image[df_cilium_points_connect$pos_x[k],
+                df_cilium_points_connect$pos_y[k], 1] <- 1
+          Image[df_cilium_points_connect$pos_x[k],
+                df_cilium_points_connect$pos_y[k], 2] <- 1
         }
         
         # tiff::writeTIFF(what = Image,
@@ -1039,19 +1043,19 @@ detectCilia <- function(input_dir_tif = NULL,
   # Save all locations of all cilia (independent from the z layer where it
   # was found being found)
   df_cilium_all <- df_cilium_information
-  df_cilium_all$rowcol <- paste(df_cilium_all$row,
-                                df_cilium_all$col,
+  df_cilium_all$xy <- paste(df_cilium_all$pos_x,
+                                df_cilium_all$pos_y,
                                 sep = ",")
   # Keep only those coordinates that are not duplicated
   # df_cilium_all <- df_cilium_all[
-    # df_cilium_all$rowcol == unique(df_cilium_all$rowcol),]
+  # df_cilium_all$xy == unique(df_cilium_all$xy),]
   df_cilium_all <- df_cilium_all[
-    !duplicated(df_cilium_all$rowcol),]
-    
+    !duplicated(df_cilium_all$xy),]
+  
   df_cilium_all <- df_cilium_all[,-c(5)]
   df_cilium_all$layer <- -99
-  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, row, col) #old
-  df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, col, row) #NEW
+  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_x, pos_y) #old
+  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x) #NEW TODO
   row.names(df_cilium_all) <- NULL
   
   # Add information of all cilium coordinates as layer -99 to data frame
@@ -1063,9 +1067,9 @@ detectCilia <- function(input_dir_tif = NULL,
   #Image_stack_all_cilia <- Image_stack_copy
   Image_stack_cilia_connected <- Image_stack
   
-  for(k in 1:length(df_cilium_all$row)){
-    Image_stack_cilia_connected[df_cilium_all$row[k], df_cilium_all$col[k], 1] <- 1
-    Image_stack_cilia_connected[df_cilium_all$row[k], df_cilium_all$col[k], 2] <- 1
+  for(k in 1:length(df_cilium_all$pos_x)){
+    Image_stack_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
+    Image_stack_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 2] <- 1
   }
   rm(k)
   
@@ -1088,10 +1092,10 @@ detectCilia <- function(input_dir_tif = NULL,
   
   for(i in 1:length(unique(df_cilium_all$ciliumNumber))){
     ciliumNumber <- unique(df_cilium_all$ciliumNumber)[i]
-    pos_x <- df_cilium_all$row[df_cilium_all$ciliumNumber == i][
-      length(df_cilium_all$row[df_cilium_all$ciliumNumber == i])]
-    pos_y <- df_cilium_all$col[df_cilium_all$ciliumNumber == i][
-      length(df_cilium_all$col[df_cilium_all$ciliumNumber == i])]
+    pos_x <- df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i][
+      length(df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i])]
+    pos_y <- df_cilium_all$pos_y[df_cilium_all$ciliumNumber == i][
+      length(df_cilium_all$pos_y[df_cilium_all$ciliumNumber == i])]
     
     image_stack_numbers <- addNumberToImage(image = image_stack_numbers,
                                             number = ciliumNumber,
@@ -1122,34 +1126,51 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Include numbers of nuclei
   table_nmask_watershed <- table(nmask_watershed)
+  df_nuclei_positions <-  as.data.frame(table_nmask_watershed)
+  names(df_nuclei_positions) <- c("nuc_number", "frequency")
+  df_nuclei_positions$nuc_number <- as.integer(levels(df_nuclei_positions$nuc_number))
   
-  if(length(table_nmask_watershed[-1]) > 0){
-    # remove 0
-    nuc_numbers <- as.integer(names(table_nmask_watershed[-1]))
+  if( (dim(df_nuclei_positions)[1]-1) > 0){
     
+    # remove 0
+    df_nuclei_positions <- df_nuclei_positions[!df_nuclei_positions$nuc_number == 0,]
+    nuc_numbers <- df_nuclei_positions$nuc_number
+    
+    # Find approximate midpoint of every nucleus
+    df_nuclei_positions$pos_x <- NA
+    df_nuclei_positions$pos_y <- NA
     for(i in 1:length(nuc_numbers)){
-      
-      # Find approximate midpoint of every nucleus
       dummy_coordinates <- which(
         imageData(nmask_watershed) == nuc_numbers[i], arr.ind = TRUE)
       
+      df_nuclei_positions$pos_x[i] <- round(mean(dummy_coordinates[,1]))
+      df_nuclei_positions$pos_y[i] <- round(mean(dummy_coordinates[,2]))
       
-      pos_x <- round(mean(dummy_coordinates[,1]))
-      pos_y <- round(mean(dummy_coordinates[,2]))
-      
+    }
+    
+    # Rearrange nuclei (from left to right and top to bottom)
+    df_nuclei_positions <- df_nuclei_positions %>% 
+      dplyr::arrange(pos_y, pos_x)
+    
+    df_nuclei_positions$nuc_number_new <- NA
+    df_nuclei_positions$nuc_number_new <- nuc_numbers
+    
+    # Add nuclei numbers to image
+    for(i in 1:length(nuc_numbers)){
       image_stack_numbers <- addNumberToImage(image = image_stack_numbers,
                                               number = i,
-                                              pos_x = pos_x,
-                                              pos_y = pos_y,
+                                              pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+                                              pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
                                               number_size_factor = number_size_factor,
                                               number_color = "green")
       image_stack_numbers <- addNumberToImage(image = image_stack_numbers,
                                               number = i,
-                                              pos_x = pos_x,
-                                              pos_y = pos_y,
+                                              pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+                                              pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
                                               number_size_factor = number_size_factor,
                                               number_color = "blue")
     }
+    
     rm(i)
   }
   

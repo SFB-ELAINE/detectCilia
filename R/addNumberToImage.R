@@ -60,17 +60,25 @@ addNumberToImage <- function(image = NULL,
     if(i == 1){
       digit_images <- list()
       
-      # Resizing factor depending on size of first digit
+      
       if(is.null(number_size_factor)){
-        min_repeating_number <-
-          min(dim(image_with_numbers)[1]/dim(digit_image)[1],
-              dim(image_with_numbers)[2]/dim(digit_image)[2])
+        # Resizing factor for priting numbers if not given
+        # The heigth should be 14px
         
-        # It should be possible to have every number at least 30 times
-        # in every direction
-        number_size_factor <- min_repeating_number / 30
+        
+        # height of the image (number of rowss)
+        number_size_factor <- 14 / dim(digit_image)[2]
       }
       
+      # if(is.null(number_size_factor)){
+      #   min_repeating_number <-
+      #     min(dim(image_with_numbers)[1]/dim(digit_image)[1],
+      #         dim(image_with_numbers)[2]/dim(digit_image)[2])
+      #   
+      #   # It should be possible to have every number at least 30 times
+      #   # in every direction
+      #   number_size_factor <- min_repeating_number / 30
+      # }
       
       digits_size_x <- 0
       digits_size_y <- 0
