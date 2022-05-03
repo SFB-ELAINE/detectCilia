@@ -29,8 +29,10 @@
 #' @param threshold_find A number (minimum intensity to find cilia)
 #' @param threshold_connect A number (minimum intensity to connect to
 #' already detected cilium)
-#' @param vicinity A number (neighborhood to look for pixels that belong to
-#' a given cilium)
+#' @param vicinity_combine A number (neighborhood to look for strucutres
+#' belonging to the same cilium (exclusion volume))
+#' @param vicinity_connect A number (neighborhood to look for pixels that
+#' belong to a given cilium (inclusion volume))
 #' @param min_size A number (gives the minimum size of a cilium to be
 #' detected)
 #' @param max_size A number (gives the maximum size of a cilium to be
@@ -50,7 +52,8 @@ detectCilia <- function(input_dir_tif = NULL,
                         threshold_by_density_of_cilium_pixels = TRUE,
                         threshold_find = NULL,
                         threshold_connect = NULL,
-                        vicinity = NULL,
+                        vicinity_combine = NULL,
+                        vicinity_connect = NULL,
                         min_size = NULL,
                         max_size = NULL,
                         number_size_factor = NULL,
@@ -218,13 +221,13 @@ detectCilia <- function(input_dir_tif = NULL,
   
   
   # Determine min and max sizes of a primary cilium
-  # (it can be between 1um and 5um long)
+  # (We assume it to be between 1um and 6um long and 0.5um and 2um wide.)
   
-  max_cilium_area_in_um2 <- 5*5
-  min_cilium_area_in_um2 <- 1*1
+  max_cilium_area_in_um2 <- 6*2
+  min_cilium_area_in_um2 <- 1*0.5
   
   if(is.null(min_size)){
-    min_size <- ceiling(x = min_cilium_area_in_um2 / pixel_size)
+    min_size <- floor(x = min_cilium_area_in_um2 / pixel_size)
   }
   
   if(is.null(max_size)){
@@ -233,17 +236,25 @@ detectCilia <- function(input_dir_tif = NULL,
   
   rm(list = c("max_cilium_area_in_um2", "min_cilium_area_in_um2"))
   
-  # Determine the vicinity to connect cilium points
-  if(is.null(vicinity)){
-    vicinity <- ceiling(x = min_size / 2)
+  # Determine the vicinity to combine cilium points during the first search (find)
+  if(is.null(vicinity_combine)){
+    vicinity_combine <- ceiling(x = max_size / 2)
+  }
+  
+  # Determine the vicinity to connect cilium points during connecting phase
+  # (a newly found point may not be further away than this many points
+  # to an existing cilium)
+  if(is.null(vicinity_connect)){
+    vicinity_connect <- ceiling(x = min_size / 2)
   }
   
   # Determine the nuclei mask area
-  # (We assume a nucleus area of 10um*10um)
-  nuc_length <- 20
+  # (We assume a nucleus area of 11um*11um and require the moving rectangle
+  # to be 3 times as larges)
+  nuc_length <- 15
   
   if(is.null(nuc_mask_width_heigth)){
-    nuc_mask_width_heigth <- ceiling(nuc_length/pixel_size)
+    nuc_mask_width_heigth <- 3*ceiling(nuc_length/pixel_size)
   }
   
   # Determine the size factor for printing numbers on the images
@@ -430,17 +441,18 @@ detectCilia <- function(input_dir_tif = NULL,
     
     ratio_of_cilia_pixels <- nucNo * ((min_size + max_size)/2) /
       (dim(Image_stack)[1]*dim(Image_stack)[2])
-    
-    ratio_of_cilia_pixels <- nucNo * sqrt(min_size*max_size) /
-      (dim(Image_stack)[1]*dim(Image_stack)[2])
+
+    # ratio_of_cilia_pixels <- nucNo * sqrt(min_size*max_size) /
+    #   (dim(Image_stack)[1]*dim(Image_stack)[2])
+
+    # ratio_of_cilia_pixels <- nucNo * min_size /
+    #   (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     #ratio_of_cilia_pixels <- 1.1*ratio_of_cilia_pixels
     
     print(paste("Intensity quantile to find cilia: ",
                 (1-ratio_of_cilia_pixels), sep=""))
-    threshold_find_avg <- quantile(Image_cilia_layer, (1-ratio_of_cilia_pixels) )
-    threshold_find_avg <- as.numeric(threshold_find_avg)
-    
+
     # Set min intensity 0
     #Image_cilia_layer_histeq[
     #  Image_cilia_layer_histeq == min(Image_cilia_layer_histeq)] <-
@@ -458,8 +470,9 @@ detectCilia <- function(input_dir_tif = NULL,
     #points_of_cilia <- dim(image_cilia_layer)[1]*dim(image_cilia_layer)[2]
     #average_cilia   <- sum_of_cilia/(points_of_cilia-zeros_of_cilia)
     
-    # threshold_find in avg-image
-    threshold_connect <- threshold_find_avg
+    # threshold_connect
+    threshold_connect <- quantile(Image_cilia_layer, (1-ratio_of_cilia_pixels) )
+    threshold_connect <- as.numeric(threshold_connect)
     
     print(paste("The new threshold values are: threshold_find = ",
                 threshold_find, " and threshold_connect = ",
@@ -684,8 +697,8 @@ detectCilia <- function(input_dir_tif = NULL,
     .pos_y_distance <- df_cilium_points$pos_y[i] -
       df_cilium_points$pos_y
     
-    .pos_x_distance[abs(.pos_x_distance) <= vicinity] <- 0
-    .pos_y_distance[abs(.pos_y_distance) <= vicinity] <- 0
+    .pos_x_distance[abs(.pos_x_distance) <= vicinity_combine] <- 0
+    .pos_y_distance[abs(.pos_y_distance) <= vicinity_combine] <- 0
     
     .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
     
@@ -720,29 +733,34 @@ detectCilia <- function(input_dir_tif = NULL,
     i <- which(df_cilium_points$ciliumNumber==0)[1]
   }
   
-  # Delete all structures that are too small and therefore may not be ------
+  # Mark all structures that are too small and therefore may not be --------
   # a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
     if(sum(df_cilium_points$ciliumNumber == i) < min_size){
-      df_cilium_points <- df_cilium_points[
-        !(df_cilium_points$ciliumNumber == i),]
+      df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
+      # df_cilium_points <- df_cilium_points[
+      #   !(df_cilium_points$ciliumNumber == i),]
     }
   }
   rm(i)
   
-  # Delete all structures that are too big and therefore may not be --------
+  # Mark all structures that are too big and therefore may not be ----------
   # a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
     if(sum(df_cilium_points$ciliumNumber == i) > max_size){
-      df_cilium_points <- df_cilium_points[
-        !(df_cilium_points$ciliumNumber == i),]
+      df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
     }
   }
   rm(i)
   
+  # Delete all structures that are too small or too big --------------------
+  
+  df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
+  
   # Delete all cilia that touch the border of the image --------------------
+  # (including one pixel in between)
   
   # Coordinate system:
   # x-axis: bottom left to bottom right
@@ -755,10 +773,10 @@ detectCilia <- function(input_dir_tif = NULL,
   dim_image_x <- dim(image_data)[2]
   dim_image_y <- dim(image_data)[1]
   
-  cilia_at_left_border    <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==1])
-  cilia_at_top_border     <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==1])
-  cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==dim_image_x])
-  cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==dim_image_y])
+  cilia_at_left_border    <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==1 | df_cilium_points$pos_x==2])
+  cilia_at_top_border     <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==1 | df_cilium_points$pos_y==2])
+  cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==dim_image_x | df_cilium_points$pos_x==(dim_image_x-1)])
+  cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==dim_image_y | df_cilium_points$pos_y==(dim_image_y-1)])
   
   if(length(cilia_at_left_border) > 0){
     df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_left_border),]
@@ -971,8 +989,8 @@ detectCilia <- function(input_dir_tif = NULL,
         .pos_y_distance <- df_cilium_points_connect$pos_y[j] -
           df_cilium_points$pos_y
         
-        .pos_x_distance[abs(.pos_x_distance) <= vicinity] <- 0
-        .pos_y_distance[abs(.pos_y_distance) <= vicinity] <- 0
+        .pos_x_distance[abs(.pos_x_distance) <= vicinity_connect] <- 0
+        .pos_y_distance[abs(.pos_y_distance) <= vicinity_connect] <- 0
         
         .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
         
@@ -1055,7 +1073,7 @@ detectCilia <- function(input_dir_tif = NULL,
   df_cilium_all <- df_cilium_all[,-c(5)]
   df_cilium_all$layer <- -99
   # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_x, pos_y) #old
-  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x) #NEW TODO
+  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x) #NEW
   row.names(df_cilium_all) <- NULL
   
   # Add information of all cilium coordinates as layer -99 to data frame
@@ -1243,36 +1261,53 @@ detectCilia <- function(input_dir_tif = NULL,
   function_call <- paste(deparse(match.call()), collapse = "")
   function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
   df_OriginalParameterList <- data.frame(
-    "parameterNames" = "Function call",
-    "parameterValues" = function_call)
+    "Original function call" = function_call)
   
-  # Final parameter values
-  parameters <- as.list(match.call())
-  print(parameters)
-  parameter_names <- names(parameters)[names(parameters) != ""]
+  # # Final parameter values
+  # parameters <- as.list(match.call())
+  # print(parameters)
+  # parameter_names <- names(parameters)[names(parameters) != ""]
+  # 
+  # # Add all parameters that are not in the list yet"threshold_find" and "threshold_connect" to parameterlist if they
+  # # are not already in the list
+  # if( ! ("threshold_find" %in% parameter_names) ){
+  #   parameter_names <-  c(parameter_names, "threshold_find")
+  # }
+  # if( ! ("threshold_connect" %in% parameter_names) ){
+  #   parameter_names <-  c(parameter_names, "threshold_connect")
+  # }
   
-  # Add "threshold_find" and "threshold_connect" to parameterlist if they
-  # are not already in the list
-  if( ! ("threshold_find" %in% parameter_names) ){
-    parameter_names <-  c(parameter_names, "threshold_find")
-  }
-  if( ! ("threshold_connect" %in% parameter_names) ){
-    parameter_names <-  c(parameter_names, "threshold_connect")
-  }
+  # All parameter values
+  parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
+                       "nucleus_color", "projection_method",
+                       "threshold_by_density_of_cilium_pixels",
+                       "threshold_find", "threshold_connect",
+                       "vicinity_combine", "vicinity_connect", "min_size", "max_size",
+                       "number_size_factor", "pixel_size", "slice_distance",
+                       "nuc_mask_width_heigth")
   
-  df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
-                                      "parameterValues" = NA)
+  
+  # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+  #                                     "parameterValues" = NA)
+  
+  df_FinalParameterList <- setNames(data.frame(matrix(ncol = length(parameter_names), nrow = 1)), parameter_names)
   
   # Go through every parameterName and save current value
   for(i in 1:length(parameter_names)){
-    df_FinalParameterList$parameterValues[
-      df_FinalParameterList$parameterNames == parameter_names[i]] <-
-      as.character(get(parameter_names[i]))
+    
+    par_value <- ifelse(test = is.null(get(parameter_names[i])), yes = NA, no = get(parameter_names[i]) )
+    
+    # df_FinalParameterList$parameterValues[
+    #   df_FinalParameterList$parameterNames == parameter_names[i] ] <- par_value
+    
+    df_FinalParameterList[[parameter_names[i]]] <- par_value
+    
   }
+  
   rm(i)
   
   # Combine both data frames
-  df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+  df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
   
   # TODO: Hier muss ich schauen, ob alle Parameter wirklich eingefügt werden und dafür sorgen, dass die folgenden Parameter als numeric value abgespeichert werden:
   # vicinity, min_size, max_size, number_size_factor, pixel_size, slice_distance, threshold_find, threshold_connect
