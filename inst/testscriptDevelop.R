@@ -162,7 +162,7 @@ output_list <- detectCilia(input_file_czi = file_name_czi)
 
 
 
-
+# output_list <- detectCilia(input_file_czi = file_name_czi,projection_method = "max",threshold_find = 0.0164340061645554, threshold_connect = 0.00815686274509804,threshold_by_density_of_cilium_pixels = FALSE, vicinity = 3)
 
 
 

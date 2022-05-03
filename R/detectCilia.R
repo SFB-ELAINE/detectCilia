@@ -1073,7 +1073,8 @@ detectCilia <- function(input_dir_tif = NULL,
   df_cilium_all <- df_cilium_all[,-c(5)]
   df_cilium_all$layer <- -99
   # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_x, pos_y) #old
-  # df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x) #NEW
+  df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x) #NEW
+  
   row.names(df_cilium_all) <- NULL
   
   # Add information of all cilium coordinates as layer -99 to data frame

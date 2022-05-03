@@ -44,45 +44,45 @@ summarizeCiliaInformation <- function(
     vertical_length <- (upper_layer-lower_layer) * slice_distance # in \mu m
 
     # Find pixels of z-projection ##
-    # Only keep non-duplicated columns row and col
+    # Only keep non-duplicated columns pos_x and pos_y
     df_cilium_projection <- df_cilium_projection[,c(1,2)]
     df_cilium_projection <- df_cilium_projection[
       !duplicated(df_cilium_projection), ]
 
-    df_cilium_projection <- dplyr::arrange(df_cilium_projection, row, col)
+    df_cilium_projection <- dplyr::arrange(df_cilium_projection, pos_x, pos_y)
 
     # Find a linear regression that fits best through the points -----------
-    number_of_row_points <- length(unique(df_cilium_projection$row))
-    number_of_col_points <- length(unique(df_cilium_projection$col))
+    number_of_pos_x_points <- length(unique(df_cilium_projection$pos_x))
+    number_of_pos_y_points <- length(unique(df_cilium_projection$pos_y))
 
     # The side with more points shall represent the x-axis in the regression
-    if(number_of_col_points > number_of_row_points){
+    if(number_of_pos_y_points > number_of_pos_x_points){
       print(paste("Cilium Nr. ", i, " is elongated in x-direction more than in y-direction.", sep=""))
       # column is x-axis (as usually)
-      linear_model <- lm(row ~ col, df_cilium_projection)
+      linear_model <- lm(pos_x ~ pos_y, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
 
-      plot(df_cilium_projection$col, -df_cilium_projection$row)
-      abline(-linear_model$coefficients[1], -linear_model$coefficients[2])
+      # plot(df_cilium_projection$pos_y, -df_cilium_projection$pos_x)
+      # abline(-linear_model$coefficients[1], -linear_model$coefficients[2])
 
       # Length of the line
-      x2 <- max(df_cilium_projection$col)
-      x1 <- min(df_cilium_projection$col)
+      x2 <- max(df_cilium_projection$pos_y)
+      x1 <- min(df_cilium_projection$pos_y)
       horizontal_length <- sqrt(slope*slope + 1) * (x2 - x1) # in pixels
       horizontal_length <- horizontal_length * pixel_size # in \mu m
 
     }else{
-      print(paste("Cilium Nr. ", i, " is elongated in y-direction more than in x-direction.", sep=""))
-      # row is x-axis
-      linear_model <- lm(col ~ row, df_cilium_projection)
+      # print(paste("Cilium Nr. ", i, " is elongated in y-direction more than in x-direction.", sep=""))
+      # pos_x is x-axis
+      linear_model <- lm(pos_y ~ pos_x, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
 
-      #plot(df_cilium_projection$col, -df_cilium_projection$row)
+      #plot(df_cilium_projection$pos_y, -df_cilium_projection$pos_x)
       #abline(linear_model$coefficients[1]/linear_model$coefficients[2], -1/linear_model$coefficients[2])
 
       # Length of the line
-      x2 <- max(df_cilium_projection$row)
-      x1 <- min(df_cilium_projection$row)
+      x2 <- max(df_cilium_projection$pos_x)
+      x1 <- min(df_cilium_projection$pos_x)
       horizontal_length <- sqrt(slope*slope + 1) * (x2 - x1) # in pixels
       horizontal_length <- horizontal_length * pixel_size # in \mu m
 
