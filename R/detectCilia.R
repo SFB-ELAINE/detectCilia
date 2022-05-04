@@ -33,9 +33,9 @@
 #' belonging to the same cilium (exclusion volume))
 #' @param vicinity_connect A number (neighborhood to look for pixels that
 #' belong to a given cilium (inclusion volume))
-#' @param min_size A number (gives the minimum size of a cilium to be
+#' @param min_cilium_area A number (gives the minimum area of a cilium to be
 #' detected)
-#' @param max_size A number (gives the maximum size of a cilium to be
+#' @param max_cilium_area A number (gives the maximum area of a cilium to be
 #' detected)
 #' @param number_size_factor A number (factor for resizing the digit image)
 #' @param pixel_size A number (size of one pixel in micrometer)
@@ -54,8 +54,8 @@ detectCilia <- function(input_dir_tif = NULL,
                         threshold_connect = NULL,
                         vicinity_combine = NULL,
                         vicinity_connect = NULL,
-                        min_size = NULL,
-                        max_size = NULL,
+                        min_cilium_area = NULL,
+                        max_cilium_area = NULL,
                         number_size_factor = NULL,
                         pixel_size = NULL,
                         slice_distance = NULL,
@@ -226,26 +226,26 @@ detectCilia <- function(input_dir_tif = NULL,
   max_cilium_area_in_um2 <- 6*2
   min_cilium_area_in_um2 <- 1*0.5
   
-  if(is.null(min_size)){
-    min_size <- floor(x = min_cilium_area_in_um2 / pixel_size)
+  if(is.null(min_cilium_area)){
+    min_cilium_area <- floor(x = min_cilium_area_in_um2 / pixel_size)
   }
   
-  if(is.null(max_size)){
-    max_size <- ceiling(x = max_cilium_area_in_um2 / pixel_size)
+  if(is.null(max_cilium_area)){
+    max_cilium_area <- ceiling(x = max_cilium_area_in_um2 / pixel_size)
   }
   
   rm(list = c("max_cilium_area_in_um2", "min_cilium_area_in_um2"))
   
   # Determine the vicinity to combine cilium points during the first search (find)
   if(is.null(vicinity_combine)){
-    vicinity_combine <- ceiling(x = max_size / 2)
+    vicinity_combine <- ceiling(x = max_cilium_area / 2)
   }
   
   # Determine the vicinity to connect cilium points during connecting phase
   # (a newly found point may not be further away than this many points
   # to an existing cilium)
   if(is.null(vicinity_connect)){
-    vicinity_connect <- ceiling(x = min_size / 2)
+    vicinity_connect <- ceiling(x = min_cilium_area / 2)
   }
   
   # Determine the nuclei mask area
@@ -393,10 +393,10 @@ detectCilia <- function(input_dir_tif = NULL,
   nmask <-  EBImage::watershed( distmap(nmask), 1 )
   
   table_nmask <- table(nmask)
-  nuc_min_size <- 0.1*median(table_nmask[-1])
+  nuc_min_area <- 0.1*median(table_nmask[-1])
   
   # remove objects that are smaller than min_nuc_size
-  to_be_removed <- as.integer(names(which(table_nmask < nuc_min_size)))
+  to_be_removed <- as.integer(names(which(table_nmask < nuc_min_area)))
   if(length(to_be_removed) > 0){
     for(i in 1:length(to_be_removed)){
       imageData(nmask)[imageData(nmask) == to_be_removed[i]] <- 0
@@ -430,22 +430,22 @@ detectCilia <- function(input_dir_tif = NULL,
     Image_cilia_layer_histeq <- getLayer(image = Image_stack_histogram_equalization,
                                          layer = cilium_color)
     
-    #ratio_of_cilia_pixels <- nucNo * ((max_size - min_size) / 2) /
+    #ratio_of_cilia_pixels <- nucNo * ((max_cilium_area - min_cilium_area) / 2) /
     #  (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     # Calculate what ratio of pixels in the image is expected to belong to
     # cilia (usually one per cell)
     
-    # ratio_of_cilia_pixels <- nucNo * (2 * min_size) /
+    # ratio_of_cilia_pixels <- nucNo * (2 * min_cilium_area) /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
     
-    ratio_of_cilia_pixels <- nucNo * ((min_size + max_size)/2) /
+    ratio_of_cilia_pixels <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
       (dim(Image_stack)[1]*dim(Image_stack)[2])
 
-    # ratio_of_cilia_pixels <- nucNo * sqrt(min_size*max_size) /
+    # ratio_of_cilia_pixels <- nucNo * sqrt(min_cilium_area*max_cilium_area) /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
 
-    # ratio_of_cilia_pixels <- nucNo * min_size /
+    # ratio_of_cilia_pixels <- nucNo * min_cilium_area /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     #ratio_of_cilia_pixels <- 1.1*ratio_of_cilia_pixels
@@ -737,7 +737,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
-    if(sum(df_cilium_points$ciliumNumber == i) < min_size){
+    if(sum(df_cilium_points$ciliumNumber == i) < min_cilium_area){
       df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
       # df_cilium_points <- df_cilium_points[
       #   !(df_cilium_points$ciliumNumber == i),]
@@ -749,7 +749,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
-    if(sum(df_cilium_points$ciliumNumber == i) > max_size){
+    if(sum(df_cilium_points$ciliumNumber == i) > max_cilium_area){
       df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
     }
   }
@@ -1283,7 +1283,7 @@ detectCilia <- function(input_dir_tif = NULL,
                        "nucleus_color", "projection_method",
                        "threshold_by_density_of_cilium_pixels",
                        "threshold_find", "threshold_connect",
-                       "vicinity_combine", "vicinity_connect", "min_size", "max_size",
+                       "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
                        "number_size_factor", "pixel_size", "slice_distance",
                        "nuc_mask_width_heigth")
   
@@ -1311,7 +1311,7 @@ detectCilia <- function(input_dir_tif = NULL,
   df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
   
   # TODO: Hier muss ich schauen, ob alle Parameter wirklich eingefügt werden und dafür sorgen, dass die folgenden Parameter als numeric value abgespeichert werden:
-  # vicinity, min_size, max_size, number_size_factor, pixel_size, slice_distance, threshold_find, threshold_connect
+  # vicinity, min_cilium_area, max_cilium_area, number_size_factor, pixel_size, slice_distance, threshold_find, threshold_connect
   # Auch bei den anderen Speicherorten danach schauen!
   
   if(!is.null(df_parameterList)){
