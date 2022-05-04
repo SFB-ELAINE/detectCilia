@@ -444,7 +444,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     ratio_of_cilia_pixels <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
       (dim(Image_stack)[1]*dim(Image_stack)[2])
-
+    
     # ratio_of_cilia_pixels <- nucNo * sqrt(min_cilium_area*max_cilium_area) /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
     
@@ -459,7 +459,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     print(paste("Intensity quantile to find cilia: ",
                 (1-ratio_of_cilia_pixels), sep=""))
-
+    
     # Set min intensity 0
     #Image_cilia_layer_histeq[
     #  Image_cilia_layer_histeq == min(Image_cilia_layer_histeq)] <-
@@ -480,7 +480,7 @@ detectCilia <- function(input_dir_tif = NULL,
     # threshold_connect
     threshold_connect <- quantile(Image_cilia_layer, (1-ratio_of_cilia_pixels) )
     threshold_connect <- as.numeric(threshold_connect)
-
+    
     print(paste("The new threshold values are: threshold_find = ",
                 threshold_find, " and threshold_connect = ",
                 threshold_connect,
@@ -550,8 +550,8 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Save only color layer of cilia
   Image_cilia_histeq <- editImage(image = Image_stack_histogram_equalization,
-                           object_color = cilium_color,
-                           threshold = threshold_find)
+                                  object_color = cilium_color,
+                                  threshold = threshold_find)
   
   #display(Image_cilia_histeq)
   
@@ -987,6 +987,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == i] <- median(cilium_intensities)
   }
+  rm(i)
   
   # i = 1 .. n (layers) Go through all layers ------------------------------
   print("Finding cilia in every layer.")
@@ -1079,79 +1080,77 @@ detectCilia <- function(input_dir_tif = NULL,
               df_cilium_points$ciliumNumber[which(.distance == 0)[1]]
           }
         }
-      }
-      # 
-      # Delete rows that cannot be connected to an existing cilium
-      df_cilium_points_connect <- df_cilium_points_connect[
-        !df_cilium_points_connect$ciliumNumber == 0,]
-      
-      if(nrow(df_cilium_points_connect) > 0){
-        row.names(df_cilium_points_connect) <-
-          1:nrow(df_cilium_points_connect)
         
-        # Delete all pixels that are not bright enough (less than median intensity (of stack))
-        df_cilium_points_connect$possibleCilium <- FALSE
-        for(k in unique(df_cilium_points_connect$ciliumNumber)){
-          
-          indices <- cbind(df_cilium_points_connect$pos_x[df_cilium_points_connect$ciliumNumber == k],
-                           df_cilium_points_connect$pos_y[df_cilium_points_connect$ciliumNumber == k])
-          
-          cilium_intensities <- Image_cilia_layer[indices]
-          
-          lower_limit <- df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == k]
-          keep_pixels <- cilium_intensities > lower_limit 
-          
-          df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- keep_pixels
-        }
-        rm(k)
-        df_cilium_points_connect <- df_cilium_points_connect[df_cilium_points_connect$possibleCilium,]
-        
-        for(k in unique(df_cilium_points_connect$ciliumNumber)){
-          if(sum(df_cilium_points_connect$ciliumNumber == k) < min_cilium_area){
-            df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- FALSE
-          }
-        }
-        rm(k)
-        df_cilium_points_connect <- df_cilium_points_connect[df_cilium_points_connect$possibleCilium,]
-        
+        # Delete rows that cannot be connected to an existing cilium
+        df_cilium_points_connect <- df_cilium_points_connect[
+          !df_cilium_points_connect$ciliumNumber == 0,]
         
         if(nrow(df_cilium_points_connect) > 0){
-          # Drop information that it is cilia
-          df_cilium_points_connect <- df_cilium_points_connect[-3]
           
-          df_cilium_points_connect$layer <- i
+          row.names(df_cilium_points_connect) <-
+            1:nrow(df_cilium_points_connect)
           
-          # Save the layer and append it to big data frame -------------------
-          
-          # Save the positions of the cilia
-          df_cilium_information <- rbind(df_cilium_information,
-                                         df_cilium_points_connect)
-          
-          # Save image with marked cilia
-          for(k in 1:length(df_cilium_points_connect$pos_x)){
-            Image[df_cilium_points_connect$pos_x[k],
-                  df_cilium_points_connect$pos_y[k], 1] <- 1
-            Image[df_cilium_points_connect$pos_x[k],
-                  df_cilium_points_connect$pos_y[k], 2] <- 1
+          # Delete all pixels that are not bright enough (less than median intensity (of stack))
+          df_cilium_points_connect$possibleCilium <- FALSE
+          for(k in unique(df_cilium_points_connect$ciliumNumber)){
+            
+            indices <- cbind(df_cilium_points_connect$pos_x[df_cilium_points_connect$ciliumNumber == k],
+                             df_cilium_points_connect$pos_y[df_cilium_points_connect$ciliumNumber == k])
+            
+            cilium_intensities <- Image_cilia_layer[indices]
+            
+            lower_limit <- df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == k]
+            keep_pixels <- cilium_intensities > lower_limit 
+            
+            df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- keep_pixels
           }
+          rm(k)
+          df_cilium_points_connect <- df_cilium_points_connect[df_cilium_points_connect$possibleCilium,]
           
-          # tiff::writeTIFF(what = Image,
-          #                 where = paste(output_dir, input_file_name,
-          #                               "_cilia_layer_", i, ".tif", sep = ""),
-          #                 bits.per.sample = 8L, compression = "none",
-          #                 reduce = TRUE)
-          Image <- EBImage::Image(data = Image, colormode = "color")
-          EBImage::writeImage(x = Image,
-                              files = paste(output_dir, input_file_name,
-                                            "_cilia_layer_", i, ".tif", sep = ""),
-                              bits.per.sample = 8,
-                              type = "tiff")
+          for(k in unique(df_cilium_points_connect$ciliumNumber)){
+            if(sum(df_cilium_points_connect$ciliumNumber == k) < min_cilium_area){
+              df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- FALSE
+            }
+          }
+          rm(k)
+          df_cilium_points_connect <- df_cilium_points_connect[df_cilium_points_connect$possibleCilium,]
+          
+          
+          if(nrow(df_cilium_points_connect) > 0){
+            # Drop information that it is cilia
+            df_cilium_points_connect <- df_cilium_points_connect[-3]
+            
+            df_cilium_points_connect$layer <- i
+            
+            # Save the layer and append it to big data frame -------------------
+            
+            # Save the positions of the cilia
+            df_cilium_information <- rbind(df_cilium_information,
+                                           df_cilium_points_connect)
+            
+            # Save image with marked cilia
+            for(k in 1:length(df_cilium_points_connect$pos_x)){
+              Image[df_cilium_points_connect$pos_x[k],
+                    df_cilium_points_connect$pos_y[k], 1] <- 1
+              Image[df_cilium_points_connect$pos_x[k],
+                    df_cilium_points_connect$pos_y[k], 2] <- 1
+            }
+            
+            # tiff::writeTIFF(what = Image,
+            #                 where = paste(output_dir, input_file_name,
+            #                               "_cilia_layer_", i, ".tif", sep = ""),
+            #                 bits.per.sample = 8L, compression = "none",
+            #                 reduce = TRUE)
+            Image <- EBImage::Image(data = Image, colormode = "color")
+            EBImage::writeImage(x = Image,
+                                files = paste(output_dir, input_file_name,
+                                              "_cilia_layer_", i, ".tif", sep = ""),
+                                bits.per.sample = 8,
+                                type = "tiff")
+          }
         }
-        
       }
-      
     }
-    
   }
   
   rm(i)
@@ -1165,8 +1164,8 @@ detectCilia <- function(input_dir_tif = NULL,
   # was found being found)
   df_cilium_all <- df_cilium_information
   df_cilium_all$xy <- paste(df_cilium_all$pos_x,
-                                df_cilium_all$pos_y,
-                                sep = ",")
+                            df_cilium_all$pos_y,
+                            sep = ",")
   # Keep only those coordinates that are not duplicated
   # df_cilium_all <- df_cilium_all[
   # df_cilium_all$xy == unique(df_cilium_all$xy),]
