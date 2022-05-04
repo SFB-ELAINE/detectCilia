@@ -1111,7 +1111,7 @@ detectCilia <- function(input_dir_tif = NULL,
             df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- FALSE
           }
         }
-        rm(i)
+        rm(k)
         df_cilium_points_connect <- df_cilium_points_connect[df_cilium_points_connect$possibleCilium,]
         
         
