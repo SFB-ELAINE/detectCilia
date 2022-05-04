@@ -8,8 +8,8 @@ fluorescence microscopy images. Works with R 4.0.0.
 ```R
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde
-# Last changed: 2020/05/14
-# Version of detectCilia: 0.4.2
+# Last changed: 2022/05/04
+# Version of detectCilia: 0.6.2
 
 
 # Delete everything in the environment
