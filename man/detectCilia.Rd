@@ -11,17 +11,18 @@ detectCilia(
   input_file_czi = NULL,
   cilium_color = "red",
   nucleus_color = "blue",
-  projection_method = "max",
-  threshold_by_density_of_cilium_pixels = FALSE,
-  threshold_find = 0.01,
-  threshold_connect = 0.005,
-  vicinity = 3,
-  min_size = 3,
-  max_size = 100,
+  projection_method = "mean",
+  threshold_by_density_of_cilium_pixels = TRUE,
+  threshold_find = NULL,
+  threshold_connect = NULL,
+  vicinity_combine = NULL,
+  vicinity_connect = NULL,
+  min_cilium_area = NULL,
+  max_cilium_area = NULL,
   number_size_factor = NULL,
   pixel_size = NULL,
   slice_distance = NULL,
-  nuc_mask_width_heigth = 100
+  nuc_mask_width_heigth = NULL
 )
 }
 \arguments{
@@ -47,13 +48,16 @@ the image)}
 \item{threshold_connect}{A number (minimum intensity to connect to
 already detected cilium)}
 
-\item{vicinity}{A number (neighborhood to look for pixels that belong to
-a given cilium)}
+\item{vicinity_combine}{A number (neighborhood to look for strucutres
+belonging to the same cilium (exclusion volume))}
 
-\item{min_size}{A number (gives the minimum size of a cilium to be
+\item{vicinity_connect}{A number (neighborhood to look for pixels that
+belong to a given cilium (inclusion volume))}
+
+\item{min_cilium_area}{A number (gives the minimum area of a cilium to be
 detected)}
 
-\item{max_size}{A number (gives the maximum size of a cilium to be
+\item{max_cilium_area}{A number (gives the maximum area of a cilium to be
 detected)}
 
 \item{number_size_factor}{A number (factor for resizing the digit image)}
