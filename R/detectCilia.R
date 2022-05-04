@@ -197,7 +197,9 @@ detectCilia <- function(input_dir_tif = NULL,
     df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi)
     
     if(df_metadata$scaling_x == df_metadata$scaling_y){
-      pixel_size_dummy <- df_metadata$scaling_x
+      # df_metadata$scaling_x given in m
+      pixel_size_dummy <- df_metadata$scaling_x * 1e6
+      
       if(is.null(pixel_size)){
         pixel_size <- pixel_size_dummy
       }else if(pixel_size != pixel_size_dummy){
@@ -208,7 +210,8 @@ detectCilia <- function(input_dir_tif = NULL,
       print("Scaling is wrong.")
     }
     if(is.null(slice_distance)){
-      slice_distance <- df_metadata$scaling_z
+      # df_metadata$scaling_x given in m
+      slice_distance <- df_metadata$scaling_z * 1e6
     }else{
       if(slice_distance != df_metadata$scaling_z){
         print("The given slize distance is different to the one obtained from the metadata.")
