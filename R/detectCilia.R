@@ -922,13 +922,17 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Renumber the cilia -----------------------------------------------------
   .number <- 1
+  df_cilium_points$ciliumNumber_NEW <- NA
   for(i in unique(df_cilium_points$ciliumNumber)){
-    df_cilium_points$ciliumNumber[df_cilium_points$ciliumNumber == i] <-
+    df_cilium_points$ciliumNumber_NEW[df_cilium_points$ciliumNumber == i] <-
       .number
     .number <- .number + 1
   }
   rm(i)
   rm(.number)
+  
+  df_cilium_points <- dplyr::select(df_cilium_points, -ciliumNumber)
+  names(df_cilium_points)[names(df_cilium_points) == "ciliumNumber_NEW"] <- "ciliumNumber"
   
   # Drop possibleCilium column
   df_cilium_points <-
@@ -1087,8 +1091,7 @@ detectCilia <- function(input_dir_tif = NULL,
         
         if(nrow(df_cilium_points_connect) > 0){
           
-          row.names(df_cilium_points_connect) <-
-            1:nrow(df_cilium_points_connect)
+          row.names(df_cilium_points_connect) <- NULL
           
           # Delete all pixels that are not bright enough (less than median intensity (of stack))
           df_cilium_points_connect$possibleCilium <- FALSE
@@ -1211,8 +1214,9 @@ detectCilia <- function(input_dir_tif = NULL,
   Image_stack_numbers <- Image_stack_cilia_connected
   image_stack_numbers <- as.array(Image_stack_numbers)
   
-  for(i in 1:length(unique(df_cilium_all$ciliumNumber))){
-    ciliumNumber <- unique(df_cilium_all$ciliumNumber)[i]
+  for(i in unique(df_cilium_all$ciliumNumber) ){
+    print(i)
+    ciliumNumber <- i
     pos_x <- df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i][
       length(df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i])]
     pos_y <- df_cilium_all$pos_y[df_cilium_all$ciliumNumber == i][
@@ -1224,7 +1228,6 @@ detectCilia <- function(input_dir_tif = NULL,
                                             pos_y = pos_y,
                                             number_size_factor = number_size_factor,
                                             number_color = "red")
-    
   }
   rm(i)
   
