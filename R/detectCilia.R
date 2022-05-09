@@ -1215,7 +1215,6 @@ detectCilia <- function(input_dir_tif = NULL,
   image_stack_numbers <- as.array(Image_stack_numbers)
   
   for(i in unique(df_cilium_all$ciliumNumber) ){
-    print(i)
     ciliumNumber <- i
     pos_x <- df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i][
       length(df_cilium_all$pos_x[df_cilium_all$ciliumNumber == i])]

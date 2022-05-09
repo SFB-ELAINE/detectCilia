@@ -57,7 +57,7 @@ summarizeCiliaInformation <- function(
 
     # The side with more points shall represent the x-axis in the regression
     if(number_of_pos_y_points > number_of_pos_x_points){
-      print(paste("Cilium Nr. ", i, " is elongated in x-direction more than in y-direction.", sep=""))
+      # print(paste("Cilium Nr. ", i, " is elongated in x-direction more than in y-direction.", sep=""))
       # column is x-axis (as usually)
       linear_model <- lm(pos_x ~ pos_y, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
