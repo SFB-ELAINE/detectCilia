@@ -22,6 +22,7 @@
 #' @param nucleus_color A character (color of the nuclei staining)
 #' @param projection_method A character (defines the method for the z projection:
 #' either "mean" or "max")
+#' @param lower_threshold A number (delete all pixel values below this threshold)
 #' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
 #' threshold values if true and instead use a custom function to calculate
 #' the thresholds by looking at the density of cilium color pixels found in
@@ -49,6 +50,7 @@ detectCilia <- function(input_dir_tif = NULL,
                         cilium_color = "red",
                         nucleus_color = "blue",
                         projection_method = "mean",
+                        lower_threshold = 0, #3/255, # TODO: delete?
                         threshold_by_density_of_cilium_pixels = TRUE,
                         threshold_find = NULL,
                         threshold_connect = NULL,
@@ -183,15 +185,13 @@ detectCilia <- function(input_dir_tif = NULL,
       image_data[,,,i] <- image
     }
     
-    Image_data <- EBImage::Image(data = image_data, colormode = "Color")
-    
     rm(i)
     
   }else if(image_format == "czi"){
     
     # Read data
     image_data <- readCzi::readCzi(input_file = input_file_czi)
-    Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+    
     
     # Read metadata and get missing parameter values
     df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi)
@@ -220,13 +220,15 @@ detectCilia <- function(input_dir_tif = NULL,
     }
   }
   
+  Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+  
   # Missing parameter input ------------------------------------------------
   
   
   # Determine min and max sizes of a primary cilium
   # (We assume it to be between 1um and 6um long and 0.5um and 2um wide.)
   
-  max_cilium_area_in_um2 <- 6*2
+  max_cilium_area_in_um2 <- 5*2 # statt 6*2
   min_cilium_area_in_um2 <- 1*0.5
   
   if(is.null(min_cilium_area)){
@@ -298,7 +300,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   
   # Create empty stack image
-  image_stack <- array(0, dim = dim(Image_data)[1:3])
+  image_stack <- array(0, dim = dim(image_data)[1:3])
   #Image_stack <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
   #                              colormode = "Color")
   
@@ -320,9 +322,17 @@ detectCilia <- function(input_dir_tif = NULL,
     print("Please choose either max or mean as zstack projection method.")
   }
   
+  rm(i)
+  
+  
+  # Apply lower thresholding -----------------------------------------------
+  #(TODO: Do something against noisy pictures)
+  if(lower_threshold > 0){
+    image_stack[image_stack <= lower_threshold] <- 0
+  }
+  
   Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
   
-  rm(i)
   
   # }
   
@@ -433,17 +443,33 @@ detectCilia <- function(input_dir_tif = NULL,
     Image_cilia_layer_histeq <- getLayer(image = Image_stack_histogram_equalization,
                                          layer = cilium_color)
     
+    #TODO
+    # if(lower_threshold > 0){
+    #   Image_cilia_layer[Image_cilia_layer <= lower_threshold] <- NA
+    #   Image_cilia_layer_histeq[Image_cilia_layer_histeq <= lower_threshold] <- NA
+    #   
+    #   number_of_pixels <- dim(Image_stack)[1]*dim(Image_stack)[2] -
+    #     sum(is.na(Image_cilia_layer))
+    #   number_of_pixels_histeq <- dim(Image_stack)[1]*dim(Image_stack)[2] -
+    #     sum(is.na(Image_cilia_layer_histeq))
+    # }else{
+    #   number_of_pixels <- dim(Image_stack)[1]*dim(Image_stack)[2]
+    #   number_of_pixels_histeq <- number_of_pixels
+    # }
+    
     #ratio_of_cilia_pixels <- nucNo * ((max_cilium_area - min_cilium_area) / 2) /
     #  (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     # Calculate what ratio of pixels in the image is expected to belong to
     # cilia (usually one per cell)
     
-    # ratio_of_cilia_pixels <- nucNo * (2 * min_cilium_area) /
+    # ratio_of_cilia_pixels <- nucNo * (min_cilium_area) /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
     
     ratio_of_cilia_pixels <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
-      (dim(Image_stack)[1]*dim(Image_stack)[2])
+      (dim(Image_stack)[1]*dim(Image_stack)[2]) #ALT
+    # ratio_of_cilia_pixels_histeq <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
+    #   (dim(Image_stack)[1]*dim(Image_stack)[2]) #ALT
     
     # ratio_of_cilia_pixels <- nucNo * sqrt(min_cilium_area*max_cilium_area) /
     #   (dim(Image_stack)[1]*dim(Image_stack)[2])
@@ -465,7 +491,7 @@ detectCilia <- function(input_dir_tif = NULL,
     #  Image_cilia_layer_histeq == min(Image_cilia_layer_histeq)] <-
     #  Image_cilia_layer_histeq - min(Image_cilia_layer_histeq)
     
-    threshold_find_histeq <- quantile(Image_cilia_layer_histeq, (1-ratio_of_cilia_pixels))
+    threshold_find_histeq <- quantile(Image_cilia_layer_histeq, (1-ratio_of_cilia_pixels), na.rm = TRUE)
     threshold_find_histeq <- as.numeric(threshold_find_histeq)
     
     #threshold_find <- min(threshold_find_avg, threshold_find_histeq)
@@ -478,8 +504,10 @@ detectCilia <- function(input_dir_tif = NULL,
     #average_cilia   <- sum_of_cilia/(points_of_cilia-zeros_of_cilia)
     
     # threshold_connect
-    threshold_connect <- quantile(Image_cilia_layer, (1-ratio_of_cilia_pixels) )
+    
+    threshold_connect <- quantile(Image_cilia_layer, (1-ratio_of_cilia_pixels), na.rm = TRUE)
     threshold_connect <- as.numeric(threshold_connect)
+    
     
     print(paste("The new threshold values are: threshold_find = ",
                 threshold_find, " and threshold_connect = ",
@@ -989,7 +1017,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     cilium_intensities <- Image_cilia_layer[indices]
     
-    df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == i] <- median(cilium_intensities)
+    df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == i] <- median(cilium_intensities, na.rm = TRUE)
   }
   rm(i)
   
@@ -1434,6 +1462,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Get the length of the cilia
   df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
+                                                 min_cilium_area,
                                                  pixel_size,
                                                  slice_distance)
   
