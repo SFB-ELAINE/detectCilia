@@ -1394,7 +1394,7 @@ detectCilia <- function(input_dir_tif = NULL,
   function_call <- paste(deparse(match.call()), collapse = "")
   function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
   df_OriginalParameterList <- data.frame(
-    "Original function call" = function_call)
+    "Original_function_call" = function_call)
   
   # # Final parameter values
   # parameters <- as.list(match.call())
