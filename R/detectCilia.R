@@ -22,7 +22,6 @@
 #' @param nucleus_color A character (color of the nuclei staining)
 #' @param projection_method A character (defines the method for the z projection:
 #' either "mean" or "max")
-#' @param lower_threshold A number (delete all pixel values below this threshold)
 #' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
 #' threshold values if true and instead use a custom function to calculate
 #' the thresholds by looking at the density of cilium color pixels found in
@@ -50,7 +49,6 @@ detectCilia <- function(input_dir_tif = NULL,
                         cilium_color = "red",
                         nucleus_color = "blue",
                         projection_method = "mean",
-                        lower_threshold = 0, #3/255, # TODO: delete?
                         threshold_by_density_of_cilium_pixels = TRUE,
                         threshold_find = NULL,
                         threshold_connect = NULL,
@@ -197,8 +195,8 @@ detectCilia <- function(input_dir_tif = NULL,
     df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi)
     
     if(df_metadata$scaling_x == df_metadata$scaling_y){
-      # df_metadata$scaling_x given in m
-      pixel_size_dummy <- df_metadata$scaling_x * 1e6
+      # df_metadata$scaling_x given in um
+      pixel_size_dummy <- df_metadata$scaling_x #* 1e6
       
       if(is.null(pixel_size)){
         pixel_size <- pixel_size_dummy
@@ -210,8 +208,8 @@ detectCilia <- function(input_dir_tif = NULL,
       print("Scaling is wrong.")
     }
     if(is.null(slice_distance)){
-      # df_metadata$scaling_x given in m
-      slice_distance <- df_metadata$scaling_z * 1e6
+      # df_metadata$scaling_x given in um
+      slice_distance <- df_metadata$scaling_z #* 1e6
     }else{
       if(slice_distance != df_metadata$scaling_z){
         print("The given slize distance is different to the one obtained from the metadata.")
@@ -324,17 +322,8 @@ detectCilia <- function(input_dir_tif = NULL,
   
   rm(i)
   
-  
-  # Apply lower thresholding -----------------------------------------------
-  #(TODO: Do something against noisy pictures)
-  if(lower_threshold > 0){
-    image_stack[image_stack <= lower_threshold] <- 0
-  }
-  
   Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
-  
-  
-  # }
+
   
   # Enhance contrast of stack image
   Image_stack_histogram_equalization <- EBImage::clahe(x = Image_stack)
@@ -518,7 +507,7 @@ detectCilia <- function(input_dir_tif = NULL,
     # print(paste("The new threshold value to find cilia in projection is: threshold_find = ",
     #             threshold_find, ".", sep=""))
     
-    rm(list = c("Image_cilia_layer_histeq"))
+    # rm(list = c("Image_cilia_layer_histeq"))
   }
   
   # # Calculate threshold find and threshold connect if
@@ -752,7 +741,6 @@ detectCilia <- function(input_dir_tif = NULL,
       ciliumNumber <- ciliumNumber_dummy[!(ciliumNumber_dummy == 0)]
     }
     
-    
     if(length(ciliumNumber) > 1)
     {
       print("The following cilia are now one:")
@@ -849,6 +837,105 @@ detectCilia <- function(input_dir_tif = NULL,
   
   rm(list = c("cilia_at_left_border", "cilia_at_top_border",
               "cilia_at_right_border", "cilia_at_bottom_border"))
+  
+  # Remove all cilium parts that are not connected to brightes  cilium -----
+  
+  df_cilium_points$disconnectedPart <- FALSE
+  
+  # indices <- cbind(df_cilium_points$pos_x[df_cilium_points$ciliumNumber == i],
+  #                  df_cilium_points$pos_y[df_cilium_points$ciliumNumber == i])
+  
+  indices <- cbind(df_cilium_points$pos_x, df_cilium_points$pos_y)
+  df_cilium_points$fluorescence_intensity <- Image_cilia_layer_histeq[indices]
+    
+  for(i in unique(df_cilium_points$ciliumNumber)){
+    
+    df_dummy <- df_cilium_points[df_cilium_points$ciliumNumber == i,]
+    
+    #Find cluster number
+    df_dummy$ClusterNumber <- 0
+    df_dummy$ClusterNumber[1] <- 1
+    
+    
+    # Start with the second entry in the data frame
+    j <- 2
+    while(!is.na(which(df_dummy$ClusterNumber==0)[1])){
+      
+      # Calculate Distance of current pixel to all other pixel that might
+      # be a cluster of that cilium
+      .pos_x_distance <- df_dummy$pos_x[j] -
+        df_dummy$pos_x
+      
+      .pos_y_distance <- df_dummy$pos_y[j] -
+        df_dummy$pos_y
+      
+      .pos_x_distance[abs(.pos_x_distance) <= vicinity_connect] <- 0
+      .pos_y_distance[abs(.pos_y_distance) <= vicinity_connect] <- 0
+      
+      .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+      
+      # Get the cilium number (close cilium that has been detected)
+      ClusterNumber_dummy <-
+        unique(df_dummy$ClusterNumber[.distance == 0])
+      
+      if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
+        # Advance Cilium number because there is no Cilium close by
+        ClusterNumber <- max(df_dummy$ClusterNumber) + 1
+      }else{
+        # Points belong to already existing cilium
+        ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
+      }
+      
+      if(length(ClusterNumber) > 1){
+        print("The following clusters are now one:")
+        print(ClusterNumber)
+        print("of the cilium number:")
+        print(i)
+        for(j in 2:length(ClusterNumber)){
+          df_dummy$ClusterNumber[
+            df_dummy$ClusterNumber == ClusterNumber[j]] <-
+            ClusterNumber[1]
+        }
+        
+      }else{
+        df_dummy$ClusterNumber[.distance == 0] <- ClusterNumber
+      }
+      
+      # Advance i to the next row which contains 0 as the cilium number
+      j <- which(df_dummy$ClusterNumber==0)[1]
+    }
+    rm(j)
+    
+    df_test <- df_dummy %>% 
+      group_by(ClusterNumber) %>% 
+      summarise(meanIntensity = mean(fluorescence_intensity))
+    
+    df_dummy$disconnectedPart[df_dummy$ClusterNumber != df_test$ClusterNumber[which(df_test$meanIntensity == max(df_test$meanIntensity))]] <- TRUE
+    
+    df_dummy <- df_dummy[!df_dummy$disconnectedPart,]
+    df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
+    
+    # Keep only rows that have been found
+    df_cilium_points <- rbind(df_cilium_points, df_dummy)
+
+  }
+  rm(i)
+  rm(df_test)
+  rm(df_dummy)
+  
+  # Delete duplicated lines
+  df_cilium_points <- df_cilium_points[duplicated(df_cilium_points),]
+  
+  # Sort cilia
+  df_cilium_points <- df_cilium_points %>% 
+    arrange(ciliumNumber)
+  
+  # Drop disconnectedPart and column
+  df_cilium_points <-
+    df_cilium_points[,!names(df_cilium_points)=="disconnectedPart"]
+  df_cilium_points <-
+    df_cilium_points[,!names(df_cilium_points)=="fluorescence_intensity"]
+  
   
   
   # Exit function because no cilium could be found -------------------------
