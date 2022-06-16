@@ -590,41 +590,174 @@ detectCilia <- function(input_dir_tif = NULL,
                         bits.per.sample = 8,
                         type = "tiff")
     
+    # # Save all parameters in a csv
+    # 
+    # # Original parameter
+    # function_call <- paste(deparse(match.call()), collapse = "")
+    # function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
+    # df_OriginalParameterList <- data.frame(
+    #   "parameterNames" = "Function call",
+    #   "parameterValues" = function_call)
+    # 
+    # # Final parameter values
+    # parameters <- as.list(match.call())
+    # parameter_names <- names(parameters)[names(parameters) != ""]
+    # 
+    # # Add "threshold_find" and "threshold_connect" to parameterlist if they
+    # # are not already in the list
+    # if( ! ("threshold_find" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_find")
+    # }
+    # if( ! ("threshold_connect" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_connect")
+    # }
+    # 
+    # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+    #                                     "parameterValues" = NA)
+    # 
+    # # Go through every parameterName and save current value
+    # for(i in 1:length(parameter_names)){
+    #   df_FinalParameterList$parameterValues[
+    #     df_FinalParameterList$parameterNames == parameter_names[i]] <-
+    #     as.character(get(parameter_names[i]))
+    # }
+    # rm(i)
+    # 
+    # # Combine both data frames
+    # df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    # 
+    # if(!is.null(df_parameterList)){
+    #   write.csv(df_parameterList,
+    #             file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+    #   write.csv2(df_parameterList,
+    #              file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+    # }
+    
+    
+    # # Save all parameters in a csv
+    # 
+    # # Original parameter
+    # function_call <- paste(deparse(match.call()), collapse = "")
+    # function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
+    # df_OriginalParameterList <- data.frame(
+    #   "Original_function_call" = function_call)
+    # 
+    # # # Final parameter values
+    # # parameters <- as.list(match.call())
+    # # print(parameters)
+    # # parameter_names <- names(parameters)[names(parameters) != ""]
+    # # 
+    # # # Add all parameters that are not in the list yet"threshold_find" and "threshold_connect" to parameterlist if they
+    # # # are not already in the list
+    # # if( ! ("threshold_find" %in% parameter_names) ){
+    # #   parameter_names <-  c(parameter_names, "threshold_find")
+    # # }
+    # # if( ! ("threshold_connect" %in% parameter_names) ){
+    # #   parameter_names <-  c(parameter_names, "threshold_connect")
+    # # }
+    # 
+    # # All parameter values
+    # parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
+    #                      "nucleus_color", "projection_method",
+    #                      "threshold_by_density_of_cilium_pixels",
+    #                      "threshold_find", "threshold_connect",
+    #                      "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
+    #                      "number_size_factor", "pixel_size", "slice_distance",
+    #                      "nuc_mask_width_heigth")
+    # 
+    # 
+    # # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+    # #                                     "parameterValues" = NA)
+    # 
+    # df_FinalParameterList <- setNames(data.frame(matrix(ncol = length(parameter_names), nrow = 1)), parameter_names)
+    # 
+    # # Go through every parameterName and save current value
+    # for(i in 1:length(parameter_names)){
+    #   
+    #   par_value <- ifelse(test = is.null(get(parameter_names[i])), yes = NA, no = get(parameter_names[i]) )
+    #   
+    #   # df_FinalParameterList$parameterValues[
+    #   #   df_FinalParameterList$parameterNames == parameter_names[i] ] <- par_value
+    #   
+    #   df_FinalParameterList[[parameter_names[i]]] <- par_value
+    #   
+    # }
+    # 
+    # rm(i)
+    # 
+    # # Combine both data frames
+    # df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
+    # 
+    # if(!is.null(df_parameterList)){
+    #   write.csv(df_parameterList,
+    #             file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+    #   write.csv2(df_parameterList,
+    #              file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+    # }
+    # 
+    # 
+    # # Save the number of nuclei
+    # df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
+    # if(!is.null(df_number_nuclei)){
+    #   write.csv(df_number_nuclei,
+    #             file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
+    #   write.csv2(df_number_nuclei,
+    #              file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
+    # }
+    
     # Save all parameters in a csv
     
     # Original parameter
     function_call <- paste(deparse(match.call()), collapse = "")
     function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
     df_OriginalParameterList <- data.frame(
-      "parameterNames" = "Function call",
-      "parameterValues" = function_call)
+      "Original_function_call" = function_call)
     
-    # Final parameter values
-    parameters <- as.list(match.call())
-    parameter_names <- names(parameters)[names(parameters) != ""]
+    # # Final parameter values
+    # parameters <- as.list(match.call())
+    # print(parameters)
+    # parameter_names <- names(parameters)[names(parameters) != ""]
+    # 
+    # # Add all parameters that are not in the list yet"threshold_find" and "threshold_connect" to parameterlist if they
+    # # are not already in the list
+    # if( ! ("threshold_find" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_find")
+    # }
+    # if( ! ("threshold_connect" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_connect")
+    # }
     
-    # Add "threshold_find" and "threshold_connect" to parameterlist if they
-    # are not already in the list
-    if( ! ("threshold_find" %in% parameter_names) ){
-      parameter_names <-  c(parameter_names, "threshold_find")
-    }
-    if( ! ("threshold_connect" %in% parameter_names) ){
-      parameter_names <-  c(parameter_names, "threshold_connect")
-    }
+    # All parameter values
+    parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
+                         "nucleus_color", "projection_method",
+                         "threshold_by_density_of_cilium_pixels",
+                         "threshold_find", "threshold_connect",
+                         "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
+                         "number_size_factor", "pixel_size", "slice_distance",
+                         "nuc_mask_width_heigth")
     
-    df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
-                                        "parameterValues" = NA)
+    
+    # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+    #                                     "parameterValues" = NA)
+    
+    df_FinalParameterList <- setNames(data.frame(matrix(ncol = length(parameter_names), nrow = 1)), parameter_names)
     
     # Go through every parameterName and save current value
     for(i in 1:length(parameter_names)){
-      df_FinalParameterList$parameterValues[
-        df_FinalParameterList$parameterNames == parameter_names[i]] <-
-        as.character(get(parameter_names[i]))
+      
+      par_value <- ifelse(test = is.null(get(parameter_names[i])), yes = NA, no = get(parameter_names[i]) )
+      
+      # df_FinalParameterList$parameterValues[
+      #   df_FinalParameterList$parameterNames == parameter_names[i] ] <- par_value
+      
+      df_FinalParameterList[[parameter_names[i]]] <- par_value
+      
     }
+    
     rm(i)
     
     # Combine both data frames
-    df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
     
     if(!is.null(df_parameterList)){
       write.csv(df_parameterList,
@@ -633,19 +766,18 @@ detectCilia <- function(input_dir_tif = NULL,
                  file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
     }
     
-    # Save the number of nuclei
-    df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
-    if(!is.null(df_number_nuclei)){
-      write.csv(df_number_nuclei,
-                file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
-      write.csv2(df_number_nuclei,
-                 file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
-    }
     
     # Get the length of the cilia
-    df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
-                                    "horizontal_length" = 0,
-                                    "total_length" = 0)
+    # df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
+    #                                 "horizontal_length" = 0,
+    #                                 "total_length" = 0)
+    
+    df_cilium_summary <- data.frame("cilium" = NA,
+                                    "vertical_length_in_um" = NA,
+                                    "vertical_length_in_layers" = NA,
+                                    "horizontal_length_in_um" = NA,
+                                    "horizontal_length_in_pixels" = NA,
+                                    "total_length_in_um" = NA)
     
     if(!is.null(df_cilium_summary)){
       write.csv(df_cilium_summary,
@@ -955,41 +1087,102 @@ detectCilia <- function(input_dir_tif = NULL,
                         bits.per.sample = 8,
                         type = "tiff")
     
+    # # Save all parameters in a csv
+    # 
+    # # Original parameter
+    # function_call <- paste(deparse(match.call()), collapse = "")
+    # function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
+    # df_OriginalParameterList <- data.frame(
+    #   "parameterNames" = "Function call",
+    #   "parameterValues" = function_call)
+    # 
+    # # Final parameter values
+    # parameters <- as.list(match.call())
+    # parameter_names <- names(parameters)[names(parameters) != ""]
+    # 
+    # # Add "threshold_find" and "threshold_connect" to parameterlist if they
+    # # are not already in the list
+    # if( ! ("threshold_find" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_find")
+    # }
+    # if( ! ("threshold_connect" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_connect")
+    # }
+    # 
+    # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+    #                                     "parameterValues" = NA)
+    # 
+    # # Go through every parameterName and save current value
+    # for(i in 1:length(parameter_names)){
+    #   df_FinalParameterList$parameterValues[
+    #     df_FinalParameterList$parameterNames == parameter_names[i]] <-
+    #     as.character(get(parameter_names[i]))
+    # }
+    # rm(i)
+    # 
+    # # Combine both data frames
+    # df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    # 
+    # if(!is.null(df_parameterList)){
+    #   write.csv(df_parameterList,
+    #             file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+    #   write.csv2(df_parameterList,
+    #              file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+    # }
+    
     # Save all parameters in a csv
     
     # Original parameter
     function_call <- paste(deparse(match.call()), collapse = "")
     function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
     df_OriginalParameterList <- data.frame(
-      "parameterNames" = "Function call",
-      "parameterValues" = function_call)
+      "Original_function_call" = function_call)
     
-    # Final parameter values
-    parameters <- as.list(match.call())
-    parameter_names <- names(parameters)[names(parameters) != ""]
+    # # Final parameter values
+    # parameters <- as.list(match.call())
+    # print(parameters)
+    # parameter_names <- names(parameters)[names(parameters) != ""]
+    # 
+    # # Add all parameters that are not in the list yet"threshold_find" and "threshold_connect" to parameterlist if they
+    # # are not already in the list
+    # if( ! ("threshold_find" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_find")
+    # }
+    # if( ! ("threshold_connect" %in% parameter_names) ){
+    #   parameter_names <-  c(parameter_names, "threshold_connect")
+    # }
     
-    # Add "threshold_find" and "threshold_connect" to parameterlist if they
-    # are not already in the list
-    if( ! ("threshold_find" %in% parameter_names) ){
-      parameter_names <-  c(parameter_names, "threshold_find")
-    }
-    if( ! ("threshold_connect" %in% parameter_names) ){
-      parameter_names <-  c(parameter_names, "threshold_connect")
-    }
+    # All parameter values
+    parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
+                         "nucleus_color", "projection_method",
+                         "threshold_by_density_of_cilium_pixels",
+                         "threshold_find", "threshold_connect",
+                         "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
+                         "number_size_factor", "pixel_size", "slice_distance",
+                         "nuc_mask_width_heigth")
     
-    df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
-                                        "parameterValues" = NA)
+    
+    # df_FinalParameterList <- data.frame("parameterNames" = parameter_names,
+    #                                     "parameterValues" = NA)
+    
+    df_FinalParameterList <- setNames(data.frame(matrix(ncol = length(parameter_names), nrow = 1)), parameter_names)
     
     # Go through every parameterName and save current value
     for(i in 1:length(parameter_names)){
-      df_FinalParameterList$parameterValues[
-        df_FinalParameterList$parameterNames == parameter_names[i]] <-
-        as.character(get(parameter_names[i]))
+      
+      par_value <- ifelse(test = is.null(get(parameter_names[i])), yes = NA, no = get(parameter_names[i]) )
+      
+      # df_FinalParameterList$parameterValues[
+      #   df_FinalParameterList$parameterNames == parameter_names[i] ] <- par_value
+      
+      df_FinalParameterList[[parameter_names[i]]] <- par_value
+      
     }
+    
     rm(i)
     
     # Combine both data frames
-    df_parameterList <- rbind(df_OriginalParameterList, df_FinalParameterList)
+    df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
     
     if(!is.null(df_parameterList)){
       write.csv(df_parameterList,
@@ -1008,9 +1201,16 @@ detectCilia <- function(input_dir_tif = NULL,
     }
     
     # Get the length of the cilia
-    df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
-                                    "horizontal_length" = 0,
-                                    "total_length" = 0)
+    # df_cilium_summary <- data.frame("cilium" = NA, "vertical_length" = 0,
+    #                                 "horizontal_length" = 0,
+    #                                 "total_length" = 0)
+    
+    df_cilium_summary <- data.frame("cilium" = NA,
+                                    "vertical_length_in_um" = NA,
+                                    "vertical_length_in_layers" = NA,
+                                    "horizontal_length_in_um" = NA,
+                                    "horizontal_length_in_pixels" = NA,
+                                    "total_length_in_um" = NA)
     
     if(!is.null(df_cilium_summary)){
       write.csv(df_cilium_summary,
