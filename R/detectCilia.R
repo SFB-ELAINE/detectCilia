@@ -252,7 +252,7 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   # Determine the nuclei mask area
-  # (We assume a nucleus area of 11um*11um and require the moving rectangle
+  # (We assume a nucleus area of 15um*15um and require the moving rectangle
   # to be 3 times as larges)
   nuc_length <- 15
   
@@ -283,7 +283,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # Stack images -----------------------------------------------------------
   
   # if(image_format == "tif"){
-  #   # Get a stack of all layers and recalculate thresholds if required -----
+  #   # Get a stack of all layers and recalculate thresholds if required
   #   #image_stack <- stackImages::stackImages(input_dir = input_dir,
   #   #                                        stackMethod = "addAndNormalize")
   #   #image_stack_max <- stackImages::stackImages(input_dir = input_dir,
@@ -323,7 +323,6 @@ detectCilia <- function(input_dir_tif = NULL,
   rm(i)
   
   Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
-
   
   # Enhance contrast of stack image
   Image_stack_histogram_equalization <- EBImage::clahe(x = Image_stack)
@@ -413,6 +412,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # Watershed in order to distinct nuclei that are too close to each other
   nmask_watershed <-  EBImage::watershed( distmap(nmask), 1 )
   #display(colorLabels(nmask_watershed), all=TRUE)
+  #display(nmask_watershed)
   
   # Count number of cells
   nucNo <- max(nmask_watershed)
@@ -1505,6 +1505,7 @@ detectCilia <- function(input_dir_tif = NULL,
   #Image_stack_copy  <- Image_stack
   #Image_stack_all_cilia <- Image_stack_copy
   Image_stack_cilia_connected <- Image_stack
+  
   
   for(k in 1:length(df_cilium_all$pos_x)){
     Image_stack_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
