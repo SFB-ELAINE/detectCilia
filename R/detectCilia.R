@@ -29,7 +29,7 @@
 #' @param threshold_find A number (minimum intensity to find cilia)
 #' @param threshold_connect A number (minimum intensity to connect to
 #' already detected cilium)
-#' @param vicinity_combine A number (neighborhood to look for strucutres
+#' @param vicinity_combine A number (neighborhood to look for structures
 #' belonging to the same cilium (exclusion volume))
 #' @param vicinity_connect A number (neighborhood to look for pixels that
 #' belong to a given cilium (inclusion volume))
@@ -69,7 +69,7 @@ detectCilia <- function(input_dir_tif = NULL,
   options(stringsAsFactors = FALSE, warn=-1)
   
   # ---------------------------------------------------------------------- #
-  # ---------------------- Data acquisition ------------------------------ #
+  # ----------------------- 1. Image preparation ------------------------- #
   # ---------------------------------------------------------------------- #
   
   # Data input -------------------------------------------------------------
@@ -125,9 +125,6 @@ detectCilia <- function(input_dir_tif = NULL,
   dir.create(output_dir, showWarnings = FALSE)
   
   
-  # ---------------------------------------------------------------------- #
-  # ---------------------- Data manipulation ----------------------------- #
-  # ---------------------------------------------------------------------- #
   # Read image data an put into one array if necessary
   if(image_format == "tif"){
     
@@ -192,7 +189,8 @@ detectCilia <- function(input_dir_tif = NULL,
     
     
     # Read metadata and get missing parameter values
-    df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi)
+    df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi,
+                                            save_metadata = FALSE)
     
     if(df_metadata$scaling_x == df_metadata$scaling_y){
       # df_metadata$scaling_x given in um
@@ -219,6 +217,7 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+  
   
   # Missing parameter input ------------------------------------------------
   
@@ -327,6 +326,10 @@ detectCilia <- function(input_dir_tif = NULL,
   # Enhance contrast of stack image
   Image_stack_histogram_equalization <- EBImage::clahe(x = Image_stack)
   
+  # ---------------------------------------------------------------------- #
+  # ------------------------ 2. Nuclei detection ------------------------- #
+  # ---------------------------------------------------------------------- #
+  
   # Find the nuclei --------------------------------------------------------
   
   # Save only color layer of nuclei
@@ -416,6 +419,10 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Count number of cells
   nucNo <- max(nmask_watershed)
+  
+  # ---------------------------------------------------------------------- #
+  # ------------------------- 3. Cilia detection ------------------------- #
+  # ---------------------------------------------------------------------- #
   
   # Calculate "threshold_find" and "threshold_connect" if ------------------
   # "threshold_by_density_of_cilium_pixels == TRUE"
@@ -970,7 +977,7 @@ detectCilia <- function(input_dir_tif = NULL,
   rm(list = c("cilia_at_left_border", "cilia_at_top_border",
               "cilia_at_right_border", "cilia_at_bottom_border"))
   
-  # Remove all cilium parts that are not connected to brightes  cilium -----
+  # Remove all cilium parts that are not connected to brightest cilium -----
   
   df_cilium_points$disconnectedPart <- FALSE
   
@@ -984,6 +991,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     df_dummy <- df_cilium_points[df_cilium_points$ciliumNumber == i,]
     
+    # TODO: What exactly did I write here?
     #Find cluster number
     df_dummy$ClusterNumber <- 0
     df_dummy$ClusterNumber[1] <- 1
@@ -1747,6 +1755,10 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   
+  
+  # ---------------------------------------------------------------------- #
+  # ---------------------- 4. Cilia measurement -------------------------- #
+  # ---------------------------------------------------------------------- #
   
   # Get the length of the cilia
   df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
