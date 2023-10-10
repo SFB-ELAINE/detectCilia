@@ -1,0 +1,10 @@
+## R package reference generated from DESCRIPTION metadata
+citation(auto = meta)
+
+## NLME book
+bibentry(bibtype = "article",
+         title = "",
+         author = c(person(c("Kai"), "Budde-Sagert"),
+                    person(c("Simone"), "Krueger")),
+         year = "2023", publisher = "???", address = "???",
+         doi = "")

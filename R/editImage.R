@@ -4,7 +4,7 @@
 #' extract the information of the cilia in an image and only use those pixel
 #' that are above a certain threshold.
 #' @aliases editimage imageedit imageEdit
-#' @author Kai Budde
+#' @author Kai Budde-Sagert
 #' @export editImage
 #' @param image An three-dimensional array of numbers between 0 and 1
 #' @param object_color A character (color of the staining of the object)

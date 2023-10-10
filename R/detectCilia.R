@@ -1,21 +1,19 @@
 #' @title detectCilia
 #' @description Main function for detecting cilia in images
-#' @details Input should be tif-format.
-#' At first, the cilia will be located by using the max intensity method
-#' and reconnecting them with nearby pixels with the lower threshold.
-#' Afterwards a linear regression is being calculated for each cilium
-#' projection which determines the length a (horizontal plane). The length b
-#' in the vertical plane is being determined by the numbers of z-slices
-#' where the cilium can be found. The entire length of the cilium is being
-#' calculated with c=sqrt(a^2+b^2).
+#' @details Input should be czi (ideally) or tif-format.
+#' At first, the cilia will be located by using a projection method.
+#' Afterward the length of a cilium is determined in the horizontal plane.
+#' The height in the vertical plane is being determined by the number of
+#' z-slices where a cilium can be found.
+#' The entire length of the cilium is being calculated with c=sqrt(a^2+b^2).
 #' The output will be written in the current directory.
 #' Please be aware that the coordinate system is turned by 90° to the right.
 #' The origin of the x- and y-axes is in the upper-left corner of the image.
 #' (The x-axis points downwards and the y-axis to the right.)
 #' @aliases ciliaDetect detectcilia
-#' @author Kai Budde
+#' @author Kai Budde-Sagert
 #' @export detectCilia
-#' @param input_dir_tif A character (directory that contains z-stack sclices
+#' @param input_dir_tif A character (directory that contains z-stack slices
 #' in the tif format)
 #' @param input_file_czi A character (a file with the z-stack image as czi)
 #' @param cilium_color A character (color of the cilium staining)
@@ -41,7 +39,7 @@
 #' @param pixel_size A number (size of one pixel in micrometer)
 #' @param slice_distance A number (distance of two consecutive slices in
 #' z-direction in micrometer)
-#' @param nuc_mask_width_heigth A number (width and heigth for detecting
+#' @param nuc_mask_width_height A number (width and height for detecting
 #' nuclei)
 
 detectCilia <- function(input_dir_tif = NULL,
@@ -59,7 +57,7 @@ detectCilia <- function(input_dir_tif = NULL,
                         number_size_factor = NULL,
                         pixel_size = NULL,
                         slice_distance = NULL,
-                        nuc_mask_width_heigth = NULL) {
+                        nuc_mask_width_height = NULL) {
   
   
   # Basics -----------------------------------------------------------------
@@ -100,11 +98,11 @@ detectCilia <- function(input_dir_tif = NULL,
   if(image_format == "tif"){
     if(grepl("\\\\", input_dir_tif)){
       input_dir_tif <- gsub("\\$", "", input_dir_tif)
-      input_file_name <- gsub("(.+)\\.tif", "\\1", file_names_tif[1])
+      input_file_name <- gsub("(.?)\\.tif", "\\1", file_names_tif[1])
       output_dir <- paste(input_dir_tif, "\\output\\", sep="")
     }else{
       input_dir_tif <- gsub("/$", "", input_dir_tif)
-      input_file_name <- gsub("(.+)\\.tif", "\\1", file_names_tif[1])
+      input_file_name <- gsub("(.?)[[:digit:]]+\\.tif", "\\1", file_names_tif[1])
       output_dir <- paste(input_dir_tif, "/output/", sep="")
     }
   }else if(image_format == "czi"){
@@ -148,7 +146,7 @@ detectCilia <- function(input_dir_tif = NULL,
       
       
       # Find the layer name (The file name should be of the form
-      # "..z01..","..z02..", ... for files obtained from ZEN oder of the
+      # "..z01..","..z02..", ... for files obtained from ZEN or of the
       # form "0001", "0002", ... for files obtained from ImageJ)
       if(grepl(pattern = ".*z([[:digit:]]+).*",
                x = file_names_tif[i], ignore.case = TRUE)){
@@ -163,15 +161,15 @@ detectCilia <- function(input_dir_tif = NULL,
       
       layer_number <- as.integer(layer_number)
       
-      if(layer_number != i){
-        print("The numbering of the layers is inaccurate of layers are missing.")
-      }
+      # if(layer_number != i){
+      #   print("The numbering of the layers is inaccurate.")
+      # }
       
-      if(i == 1){
+      if(layer_number == 1){
         image_data <- array(0, dim = c(dim(image),length(file_names_tif)))
       }
       
-      image_data[,,,i] <- image
+      image_data[,,,layer_number] <- image
     }
     
     rm(i)
@@ -251,8 +249,8 @@ detectCilia <- function(input_dir_tif = NULL,
   # to be 3 times as larges)
   nuc_length <- 15
   
-  if(is.null(nuc_mask_width_heigth)){
-    nuc_mask_width_heigth <- 3*ceiling(nuc_length/pixel_size)
+  if(is.null(nuc_mask_width_height)){
+    nuc_mask_width_height <- 3*ceiling(nuc_length/pixel_size)
   }
   
   # Determine thresholds for finding cilia if not to be determined depending
@@ -319,8 +317,8 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Calculate the nucleus mask
   nmask <- EBImage::thresh(x = Image_nuclei,
-                           w = nuc_mask_width_heigth,
-                           h = nuc_mask_width_heigth,
+                           w = nuc_mask_width_height,
+                           h = nuc_mask_width_height,
                            offset = 0.05)
   
   # Morphological opening to remove objects smaller than the structuring element
@@ -480,7 +478,7 @@ detectCilia <- function(input_dir_tif = NULL,
                          "threshold_find", "threshold_connect",
                          "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
                          "number_size_factor", "pixel_size", "slice_distance",
-                         "nuc_mask_width_heigth")
+                         "nuc_mask_width_height")
     
     df_FinalParameterList <- setNames(data.frame(
       matrix(ncol = length(parameter_names), nrow = 1)),
@@ -835,7 +833,7 @@ detectCilia <- function(input_dir_tif = NULL,
                          "threshold_find", "threshold_connect",
                          "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
                          "number_size_factor", "pixel_size", "slice_distance",
-                         "nuc_mask_width_heigth")
+                         "nuc_mask_width_height")
     
     df_FinalParameterList <- setNames(data.frame(
       matrix(ncol = length(parameter_names), nrow = 1)),
@@ -1306,7 +1304,7 @@ detectCilia <- function(input_dir_tif = NULL,
                        "vicinity_combine", "vicinity_connect",
                        "min_cilium_area", "max_cilium_area",
                        "number_size_factor", "pixel_size", "slice_distance",
-                       "nuc_mask_width_heigth")
+                       "nuc_mask_width_height")
   
   
   df_FinalParameterList <- setNames(data.frame(

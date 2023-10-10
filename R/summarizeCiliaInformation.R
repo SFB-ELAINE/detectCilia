@@ -3,7 +3,7 @@
 #' @details Input should be the result of detectCilia.R.
 #' The output is a data frame with the lengths of the found cilia.
 #' @aliases summarizeCiliumInformation summarizeciliainformation
-#' @author Kai Budde
+#' @author Kai Budde-Sagert
 #' @export summarizeCiliaInformation
 #' @import graphics
 #' @import stats

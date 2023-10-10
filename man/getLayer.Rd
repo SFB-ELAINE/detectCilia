@@ -20,5 +20,5 @@ By using an x-y-3(rgb)-representation of an image, you can
 extract one layer.
 }
 \author{
-Kai Budde
+Kai Budde-Sagert
 }

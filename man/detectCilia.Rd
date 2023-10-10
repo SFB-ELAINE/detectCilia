@@ -22,11 +22,11 @@ detectCilia(
   number_size_factor = NULL,
   pixel_size = NULL,
   slice_distance = NULL,
-  nuc_mask_width_heigth = NULL
+  nuc_mask_width_height = NULL
 )
 }
 \arguments{
-\item{input_dir_tif}{A character (directory that contains z-stack sclices
+\item{input_dir_tif}{A character (directory that contains z-stack slices
 in the tif format)}
 
 \item{input_file_czi}{A character (a file with the z-stack image as czi)}
@@ -48,7 +48,7 @@ the image)}
 \item{threshold_connect}{A number (minimum intensity to connect to
 already detected cilium)}
 
-\item{vicinity_combine}{A number (neighborhood to look for strucutres
+\item{vicinity_combine}{A number (neighborhood to look for structures
 belonging to the same cilium (exclusion volume))}
 
 \item{vicinity_connect}{A number (neighborhood to look for pixels that
@@ -67,26 +67,24 @@ detected)}
 \item{slice_distance}{A number (distance of two consecutive slices in
 z-direction in micrometer)}
 
-\item{nuc_mask_width_heigth}{A number (width and heigth for detecting
+\item{nuc_mask_width_height}{A number (width and height for detecting
 nuclei)}
 }
 \description{
 Main function for detecting cilia in images
 }
 \details{
-Input should be tif-format.
-At first, the cilia will be located by using the max intensity method
-and reconnecting them with nearby pixels with the lower threshold.
-Afterwards a linear regression is being calculated for each cilium
-projection which determines the length a (horizontal plane). The length b
-in the vertical plane is being determined by the numbers of z-slices
-where the cilium can be found. The entire length of the cilium is being
-calculated with c=sqrt(a^2+b^2).
+Input should be czi (ideally) or tif-format.
+At first, the cilia will be located by using a projection method.
+Afterward the length of a cilium is determined in the horizontal plane.
+The height in the vertical plane is being determined by the number of
+z-slices where a cilium can be found.
+The entire length of the cilium is being calculated with c=sqrt(a^2+b^2).
 The output will be written in the current directory.
 Please be aware that the coordinate system is turned by 90° to the right.
 The origin of the x- and y-axes is in the upper-left corner of the image.
 (The x-axis points downwards and the y-axis to the right.)
 }
 \author{
-Kai Budde
+Kai Budde-Sagert
 }

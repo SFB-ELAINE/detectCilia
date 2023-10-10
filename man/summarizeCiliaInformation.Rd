@@ -8,12 +8,15 @@
 \usage{
 summarizeCiliaInformation(
   df_cilium_information = df_cilium_information,
+  min_cilium_area = min_cilium_area,
   pixel_size = pixel_size,
   slice_distance = slice_distance
 )
 }
 \arguments{
 \item{df_cilium_information}{A data frame}
+
+\item{min_cilium_area}{A number (min number of pixels needed for a layer being part of a cilium)}
 
 \item{pixel_size}{A number (size of one pixel in micrometer)}
 
@@ -37,5 +40,5 @@ df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
 
 }
 \author{
-Kai Budde
+Kai Budde-Sagert
 }

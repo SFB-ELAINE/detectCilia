@@ -1,15 +1,15 @@
 # detectCilia
 R package to detect cilia and other colored structures in confocal
-fluorescence microscopy images. Works with R 4.0.0.
+fluorescence microscopy images. Works with R 4.2.2.
 
-## Code for using the R package
+## Example code for using the R package
 
+See `inst/testscript.R`.
 
 ```R
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
-# Author: Kai Budde
-# Last changed: 2022/05/04
-# Version of detectCilia: 0.6.2
+# Author: Kai Budde-Sagert
+# Last changed: 2023/10/09
 
 
 # Delete everything in the environment
@@ -21,82 +21,81 @@ graphics.off()
 # Please adapt the following parameters ####################################
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+### TIF DIRECTORY ###
+
 # Directory of the images
-input_dir <- "images"
+input_dir <- file.path("inst", "testImagesTif")
 
 # Size of a pixel in micrometer
-pixel_size <- 0.21964505359339307678791073625022 # in \mu m
+pixel_size <- 0.219645 # in \mu m
 
-# Distance between layer in micrometer
-sclice_distance <- 0.31607# in \mu m
+# Distance between two layers in micrometers
+slice_distance <- 0.31607# in \mu m
+
 cilium_color <- "red"
 
-# Use internal calculation of threshold by looking at cilium color pixel
-# density
-threshold_by_density_of_cilium_pixels <- TRUE
+# Manually set mask width here because image is small
+nuc_mask_width_height <- 100
 
-# Threshold to find cilia in stack image (max intensities of all layers)
-# threshold_find <- 0.01
-# <- unnecessary if threshold_by_density_of_cilium_pixels == TRUE
 
-# Lower bound for finding pixels that belong to found cilia in every layer
-# threshold_connect <- 0.005
-# <- unnecessary if threshold_by_density_of_cilium_pixels == TRUE
+### CZI FILE ###
 
-# How many pixels to skip for joining seperate cilium pixels to one cilium
-vicinity <- 2
+# Directory of the images
+input_file <- file.path("inst", "testImageCzi", "CiliaImage.czi")
 
-# Minimum/Maximum size of cilia (in pixel)
-min_size <- 20
-max_size <- 150
-
-# Scaling factor for digit numbers
-number_size_factor <- 0.15
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-list.of.packages <- c("devtools")
-new.packages <- list.of.packages[
-  !(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
-require(devtools)
+# Install packages #########################################################
+groundhog.day <- "2023-01-01"
+if(!any(grepl(pattern = "groundhog", x = installed.packages(), ignore.case = TRUE))){
+  install.packages("groundhog")
+}
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install(version = "3.11")
-BiocManager::install("EBImage")
-library(EBImage)
-# If you encounted problems, see https://megapteraphile.wordpress.com/2019/09/29/challenges-installing-ebimage-in-r/
+# Load packages
+library(groundhog)
+pkgs <- c("BiocManager", "devtools", "dplyr", "reticulate")
+groundhog.library(pkgs, groundhog.day)
+
+if(!("EBImage" %in% utils::installed.packages())){
+  print("Installing EBImage.")
+  BiocManager::install("EBImage")
+}
+
+require(EBImage)
+
+# Read in Python package for reading czi files
+# (Users will be asked to install miniconda
+# when starting for the first time)
+if(! "czifile" %in% reticulate::py_list_packages()$package){
+  reticulate::py_install("czifile")
+}
+
+# Install the R package for reading czi images
+if(!("readCzi" %in% installed.packages()[,"Package"])){
+  devtools::install_github("SFB-ELAINE/readCzi")
+}
+require(readCzi)
+
+# Install the R package for detecting cilia in microscopy images
+if(!("detectCilia" %in% installed.packages()[,"Package"])){
+  devtools::install_github("SFB-ELAINE/detectCilia")
+}
+require(detectCilia)
 
 
-# Install the R package for producing stacks of the images
-devtools::install_github("SFB-ELAINE/stackImages", ref = "v0.1.4")
-require(stackImages)
-
-devtools::install_github("SFB-ELAINE/detectCilia", ref = "v0.4.2") 
-library(detectCilia)
-
-
-## FIRST EXAMPLE DIRECRY -------------------------------------------------
+## FIRST EXAMPLE TIF DIRECTORY ---------------------------------------------
 
 # Obtain all positions of cilia in every z-layer
-df_cilium_information <- detectCilia(input_dir = input_dir,
-                                     cilium_color = cilium_color,
-                                     threshold_by_density_of_cilium_pixels = threshold_by_density_of_cilium_pixels,
-                                     vicinity = vicinity,
-                                     min_size = min_size,
-                                     max_size = max_size,
-                                     number_size_factor = number_size_factor)
+detectCIlia_output_list <- detectCilia::detectCilia(
+  input_dir_tif = input_dir,
+  cilium_color = cilium_color,
+  pixel_size = pixel_size,
+  slice_distance = slice_distance,
+  nuc_mask_width_height = nuc_mask_width_height)
 
-# Get the length of the cilia
-df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
-                                               pixel_size,
-                                               sclice_distance)
+## SECOND EXAMPLE CZI FILE -------------------------------------------------
 
-write.csv(df_cilium_summary,
-          file = paste(input_dir, "/output/cilium_summary.csv", sep=""))
-
-write.csv2(df_cilium_summary,
-          file = paste(input_dir, "/output/cilium_summary_de.csv", sep=""))
-
+# Obtain all positions of cilia in every z-layer
+detectCIlia_output_list2 <- detectCilia::detectCilia(input_file_czi = input_file)
 ```

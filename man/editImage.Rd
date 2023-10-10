@@ -26,5 +26,5 @@ extract the information of the cilia in an image and only use those pixel
 that are above a certain threshold.
 }
 \author{
-Kai Budde
+Kai Budde-Sagert
 }

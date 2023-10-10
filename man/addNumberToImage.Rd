@@ -38,5 +38,5 @@ Adds a number to the image layer
 Adds an integer to a x-y-3(rgb)-representation of an image.
 }
 \author{
-Kai Budde
+Kai Budde-Sagert
 }
