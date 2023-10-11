@@ -9,6 +9,7 @@
 detectCilia(
   input_dir_tif = NULL,
   input_file_czi = NULL,
+  output_dir = NULL,
   cilium_color = "red",
   nucleus_color = "blue",
   projection_method = "mean",
@@ -30,6 +31,8 @@ detectCilia(
 in the tif format)}
 
 \item{input_file_czi}{A character (a file with the z-stack image as czi)}
+
+\item{output_dir}{A character (directory where the results should be saved)}
 
 \item{cilium_color}{A character (color of the cilium staining)}
 

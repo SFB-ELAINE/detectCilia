@@ -16,6 +16,7 @@
 #' @param input_dir_tif A character (directory that contains z-stack slices
 #' in the tif format)
 #' @param input_file_czi A character (a file with the z-stack image as czi)
+#' @param output_dir A character (directory where the results should be saved)
 #' @param cilium_color A character (color of the cilium staining)
 #' @param nucleus_color A character (color of the nuclei staining)
 #' @param projection_method A character (defines the method for the z projection:
@@ -44,6 +45,7 @@
 
 detectCilia <- function(input_dir_tif = NULL,
                         input_file_czi = NULL,
+                        output_dir = NULL,
                         cilium_color = "red",
                         nucleus_color = "blue",
                         projection_method = "mean",
@@ -99,22 +101,29 @@ detectCilia <- function(input_dir_tif = NULL,
     if(grepl("\\\\", input_dir_tif)){
       input_dir_tif <- gsub("\\$", "", input_dir_tif)
       input_file_name <- gsub("(.?)\\.tif", "\\1", file_names_tif[1])
-      output_dir <- paste(input_dir_tif, "\\output\\", sep="")
+      if(is.null(output_dir)){
+        output_dir <- paste(input_dir_tif, "\\output\\", sep="") 
+      }
     }else{
       input_dir_tif <- gsub("/$", "", input_dir_tif)
       input_file_name <- gsub("(.?)[[:digit:]]+\\.tif", "\\1", file_names_tif[1])
-      output_dir <- paste(input_dir_tif, "/output/", sep="")
+      if(is.null(output_dir)){
+        output_dir <- paste(input_dir_tif, "/output/", sep="")
+      }
     }
   }else if(image_format == "czi"){
     if(grepl("\\\\", input_file_czi)){
       input_dir <- gsub("(.+)\\.+\\.czi", "\\1", input_file_czi)
       input_file_name <- gsub(".+\\(.+)\\.czi", "\\1", input_file_czi)
-      output_dir <- paste(input_dir, "\\", input_file_name, "_output\\", sep="")
-      
+      if(is.null(output_dir)){
+        output_dir <- paste(input_dir, "\\", input_file_name, "_output\\", sep="")
+      }
     }else{
       input_dir <- gsub("(.+)/.+\\.czi", "\\1", input_file_czi)
       input_file_name <- gsub(".+/(.+)\\.czi", "\\1", input_file_czi)
-      output_dir <- paste(input_dir, "/", input_file_name, "_output/", sep="")
+      if(is.null(output_dir)){
+        output_dir <- paste(input_dir, "/", input_file_name, "_output/", sep="")
+      }
     }
   }
   
@@ -456,9 +465,10 @@ detectCilia <- function(input_dir_tif = NULL,
       EBImage::normalize(Image_stack_histogram_equalization)
     
     EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
-                        files = paste(output_dir, input_file_name,
-                                      "_stack_cilia_all_histogram_equalized_normalized.tif",
-                                      sep = ""),
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                                sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")
     
@@ -502,18 +512,18 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_parameterList)){
       write.csv(df_parameterList,
-                file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "parameter_list.csv"), row.names = FALSE)
       write.csv2(df_parameterList,
-                 file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "parameter_list_de.csv"), row.names = FALSE)
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
       write.csv(df_number_nuclei,
-                file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "nuclei_number.csv"), row.names = FALSE)
       write.csv2(df_number_nuclei,
-                 file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "nuclei_number_de.csv"), row.names = FALSE)
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -525,10 +535,10 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_cilium_summary)){
       write.csv(df_cilium_summary,
-                file = paste(output_dir, "cilium_summary.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "cilium_summary.csv"), row.names = FALSE)
       
       write.csv2(df_cilium_summary,
-                 file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "cilium_summary_de.csv"), row.names = FALSE)
     }
     
     return(NULL)
@@ -811,9 +821,10 @@ detectCilia <- function(input_dir_tif = NULL,
       EBImage::normalize(Image_stack_histogram_equalization)
     
     EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
-                        files = paste(output_dir, input_file_name,
-                                      "_stack_cilia_all_histogram_equalized_normalized.tif",
-                                      sep = ""),
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                                sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")
     
@@ -857,18 +868,18 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_parameterList)){
       write.csv(df_parameterList,
-                file = paste(output_dir, "parameter_list.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "parameter_list.csv"), row.names = FALSE)
       write.csv2(df_parameterList,
-                 file = paste(output_dir, "parameter_list_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "parameter_list_de.csv"), row.names = FALSE)
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
       write.csv(df_number_nuclei,
-                file = paste(output_dir, "nuclei_number.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "nuclei_number.csv"), row.names = FALSE)
       write.csv2(df_number_nuclei,
-                 file = paste(output_dir, "nuclei_number_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "nuclei_number_de.csv"), row.names = FALSE)
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -880,10 +891,10 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_cilium_summary)){
       write.csv(df_cilium_summary,
-                file = paste(output_dir, "cilium_summary.csv", sep=""), row.names = FALSE)
+                file = file.path(output_dir, "cilium_summary.csv"), row.names = FALSE)
       
       write.csv2(df_cilium_summary,
-                 file = paste(output_dir, "cilium_summary_de.csv", sep=""), row.names = FALSE)
+                 file = file.path(output_dir, "cilium_summary_de.csv"), row.names = FALSE)
     }
     
     return(NULL)
@@ -917,10 +928,10 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   EBImage::writeImage(x = Image_stack_cilia,
-                      files = paste(output_dir,
-                                    input_file_name,
-                                    "_stack_cilia_unconnected.tif",
-                                    sep = ""),
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_unconnected.tif",
+                                              sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
@@ -1109,8 +1120,11 @@ detectCilia <- function(input_dir_tif = NULL,
             
             Image <- EBImage::Image(data = Image, colormode = "color")
             EBImage::writeImage(x = Image,
-                                files = paste(output_dir, input_file_name,
-                                              "_cilia_layer_", i, ".tif", sep = ""),
+                                files = file.path(output_dir,
+                                                  paste(input_file_name,
+                                                        "_cilia_layer_",
+                                                        i, ".tif",
+                                                        sep = "")),
                                 bits.per.sample = 8,
                                 type = "tiff")
           }
@@ -1160,8 +1174,10 @@ detectCilia <- function(input_dir_tif = NULL,
   rm(k)
   
   EBImage::writeImage(x = Image_stack_cilia_connected,
-                      files = paste(output_dir, input_file_name,
-                                    "_stack_cilia_connected.tif", sep = ""),
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_connected.tif",
+                                              sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
@@ -1190,8 +1206,10 @@ detectCilia <- function(input_dir_tif = NULL,
   Image_stack_numbers <- EBImage::Image(data = image_stack_numbers,
                                         colormode = "color")
   EBImage::writeImage(x = Image_stack_numbers,
-                      files = paste(output_dir, input_file_name,
-                                    "_stack_cilia_all_numbers.tif", sep = ""),
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_all_numbers.tif",
+                                              sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
@@ -1267,9 +1285,10 @@ detectCilia <- function(input_dir_tif = NULL,
   print(paste("Number of nuclei: ", nucNo, sep=""))
   
   EBImage::writeImage(x = Image_stack_numbers,
-                      files = paste(output_dir, input_file_name,
-                                    "_stack_cilia_all_numbers_nuclei.tif",
-                                    sep = ""),
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_all_numbers_nuclei.tif",
+                                              sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
@@ -1279,9 +1298,10 @@ detectCilia <- function(input_dir_tif = NULL,
     Image_stack_histogram_equalization)
   
   EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
-                      files = paste(output_dir, input_file_name,
-                                    "_stack_cilia_all_histogram_equalized_normalized.tif",
-                                    sep = ""),
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                              sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
@@ -1329,11 +1349,11 @@ detectCilia <- function(input_dir_tif = NULL,
   
   if(!is.null(df_parameterList)){
     write.csv(df_parameterList,
-              file = paste(output_dir, "parameter_list.csv", sep=""),
+              file = file.path(output_dir, "parameter_list.csv"),
               row.names = FALSE)
     
     write.csv2(df_parameterList,
-               file = paste(output_dir, "parameter_list_de.csv", sep=""),
+               file = file.path(output_dir, "parameter_list_de.csv"),
                row.names = FALSE)
   }
   
@@ -1341,10 +1361,10 @@ detectCilia <- function(input_dir_tif = NULL,
   df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
   if(!is.null(df_number_nuclei)){
     write.csv(df_number_nuclei,
-              file = paste(output_dir, "nuclei_number.csv", sep=""),
+              file = file.path(output_dir, "nuclei_number.csv"),
               row.names = FALSE)
     write.csv2(df_number_nuclei,
-               file = paste(output_dir, "nuclei_number_de.csv", sep=""),
+               file = file.path(output_dir, "nuclei_number_de.csv"),
                row.names = FALSE)
   }
   
@@ -1364,11 +1384,11 @@ detectCilia <- function(input_dir_tif = NULL,
   
   if(!is.null(df_cilium_summary)){
     write.csv(df_cilium_summary,
-              file = paste(output_dir, "cilium_summary.csv", sep=""),
+              file = file.path(output_dir, "cilium_summary.csv"),
               row.names = FALSE)
     
     write.csv2(df_cilium_summary,
-               file = paste(output_dir, "cilium_summary_de.csv", sep=""),
+               file = file.path(output_dir, "cilium_summary_de.csv"),
                row.names = FALSE)
   }
   
