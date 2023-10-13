@@ -58,7 +58,7 @@ summarizeCiliaInformation <- function(
     df_cilium_projection <- df_cilium_projection[
       !duplicated(df_cilium_projection), ]
 
-    df_cilium_projection <- dplyr::arrange(df_cilium_projection, pos_x, pos_y)
+    df_cilium_projection <- dplyr::arrange(df_cilium_projection, .data$pos_x, .data$pos_y)
 
     # Find a linear regression that fits best through the points -----------
     number_of_pos_x_points <- length(unique(df_cilium_projection$pos_x))

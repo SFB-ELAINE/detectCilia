@@ -13,6 +13,8 @@
 #' @aliases ciliaDetect detectcilia
 #' @author Kai Budde-Sagert
 #' @export detectCilia
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @param input_dir_tif A character (directory that contains z-stack slices
 #' in the tif format)
 #' @param input_file_czi A character (a file with the z-stack image as czi)
@@ -332,7 +334,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Morphological opening to remove objects smaller than the structuring element
   # (disc of size 13)
-  nmask <- EBImage::opening(nmask, makeBrush(13, shape='disc'))
+  nmask <- EBImage::opening(nmask, EBImage::makeBrush(13, shape='disc'))
   # Fill holes
   nmask <- EBImage::fillHull(nmask)
   # Label each connected set of pixels with a distinct ID
@@ -358,7 +360,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # Delete all nuclei at border
   if(length(nuclei_at_borders) > 0){
     for(i in 1:length(nuclei_at_borders)){
-      imageData(nmask)[imageData(nmask) == nuclei_at_borders[i]] <- 0
+      EBImage::imageData(nmask)[EBImage::imageData(nmask) == nuclei_at_borders[i]] <- 0
     }
     rm(i)
   }
@@ -369,7 +371,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # object sizes
   # barplot(table(nmask)[-1])
   
-  nmask <-  EBImage::watershed( distmap(nmask), 1 )
+  nmask <-  EBImage::watershed(EBImage::distmap(nmask), 1)
   
   table_nmask <- table(nmask)
   nuc_min_area <- 0.1*median(table_nmask[-1])
@@ -378,7 +380,7 @@ detectCilia <- function(input_dir_tif = NULL,
   to_be_removed <- as.integer(names(which(table_nmask < nuc_min_area)))
   if(length(to_be_removed) > 0){
     for(i in 1:length(to_be_removed)){
-      imageData(nmask)[imageData(nmask) == to_be_removed[i]] <- 0
+      EBImage::imageData(nmask)[EBImage::imageData(nmask) == to_be_removed[i]] <- 0
     }
     rm(i)
   }
@@ -388,7 +390,7 @@ detectCilia <- function(input_dir_tif = NULL,
   #display(nmask)
   
   # Watershed in order to distinct nuclei that are too close to each other
-  nmask_watershed <-  EBImage::watershed( distmap(nmask), 1 )
+  nmask_watershed <-  EBImage::watershed( EBImage::distmap(nmask), 1 )
   #display(colorLabels(nmask_watershed), all=TRUE)
   #display(nmask_watershed)
   
@@ -511,19 +513,19 @@ detectCilia <- function(input_dir_tif = NULL,
     df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
     
     if(!is.null(df_parameterList)){
-      write.csv(df_parameterList,
-                file = file.path(output_dir, "parameter_list.csv"), row.names = FALSE)
-      write.csv2(df_parameterList,
-                 file = file.path(output_dir, "parameter_list_de.csv"), row.names = FALSE)
+      readr::write_csv(df_parameterList,
+                file = file.path(output_dir, "parameter_list.csv"))
+      readr::write_csv2(df_parameterList,
+                 file = file.path(output_dir, "parameter_list_de.csv"))
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
-      write.csv(df_number_nuclei,
-                file = file.path(output_dir, "nuclei_number.csv"), row.names = FALSE)
-      write.csv2(df_number_nuclei,
-                 file = file.path(output_dir, "nuclei_number_de.csv"), row.names = FALSE)
+      readr::write_csv(df_number_nuclei,
+                file = file.path(output_dir, "nuclei_number.csv"))
+      readr::write_csv2(df_number_nuclei,
+                 file = file.path(output_dir, "nuclei_number_de.csv"))
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -534,11 +536,11 @@ detectCilia <- function(input_dir_tif = NULL,
                                     "total_length_in_um" = NA)
     
     if(!is.null(df_cilium_summary)){
-      write.csv(df_cilium_summary,
-                file = file.path(output_dir, "cilium_summary.csv"), row.names = FALSE)
+      readr::write_csv(df_cilium_summary,
+                file = file.path(output_dir, "cilium_summary.csv"))
       
-      write.csv2(df_cilium_summary,
-                 file = file.path(output_dir, "cilium_summary_de.csv"), row.names = FALSE)
+      readr::write_csv2(df_cilium_summary,
+                 file = file.path(output_dir, "cilium_summary_de.csv"))
     }
     
     return(NULL)
@@ -777,8 +779,8 @@ detectCilia <- function(input_dir_tif = NULL,
     rm(j)
     
     df_test <- df_dummy %>% 
-      group_by(ClusterNumber) %>% 
-      summarise(meanIntensity = mean(fluorescence_intensity))
+      dplyr::group_by(ClusterNumber) %>% 
+      dplyr::summarise(meanIntensity = mean(.data$fluorescence_intensity))
     
     df_dummy$disconnectedPart[
       df_dummy$ClusterNumber != df_test$ClusterNumber[
@@ -800,7 +802,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Sort cilia
   df_cilium_points <- df_cilium_points %>% 
-    arrange(ciliumNumber)
+    dplyr::arrange(ciliumNumber)
   
   # Drop disconnectedPart and column
   df_cilium_points <-
@@ -867,19 +869,19 @@ detectCilia <- function(input_dir_tif = NULL,
     df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
     
     if(!is.null(df_parameterList)){
-      write.csv(df_parameterList,
-                file = file.path(output_dir, "parameter_list.csv"), row.names = FALSE)
-      write.csv2(df_parameterList,
-                 file = file.path(output_dir, "parameter_list_de.csv"), row.names = FALSE)
+      readr::write_csv(df_parameterList,
+                file = file.path(output_dir, "parameter_list.csv"))
+      readr::write_csv2(df_parameterList,
+                 file = file.path(output_dir, "parameter_list_de.csv"))
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
-      write.csv(df_number_nuclei,
-                file = file.path(output_dir, "nuclei_number.csv"), row.names = FALSE)
-      write.csv2(df_number_nuclei,
-                 file = file.path(output_dir, "nuclei_number_de.csv"), row.names = FALSE)
+      readr::write_csv(df_number_nuclei,
+                file = file.path(output_dir, "nuclei_number.csv"))
+      readr::write_csv2(df_number_nuclei,
+                 file = file.path(output_dir, "nuclei_number_de.csv"))
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -890,11 +892,11 @@ detectCilia <- function(input_dir_tif = NULL,
                                     "total_length_in_um" = NA)
     
     if(!is.null(df_cilium_summary)){
-      write.csv(df_cilium_summary,
-                file = file.path(output_dir, "cilium_summary.csv"), row.names = FALSE)
+      readr::write_csv(df_cilium_summary,
+                file = file.path(output_dir, "cilium_summary.csv"))
       
-      write.csv2(df_cilium_summary,
-                 file = file.path(output_dir, "cilium_summary_de.csv"), row.names = FALSE)
+      readr::write_csv2(df_cilium_summary,
+                 file = file.path(output_dir, "cilium_summary_de.csv"))
     }
     
     return(NULL)
@@ -1234,7 +1236,7 @@ detectCilia <- function(input_dir_tif = NULL,
     df_nuclei_positions$pos_y <- NA
     for(i in 1:length(nuc_numbers)){
       dummy_coordinates <- which(
-        imageData(nmask_watershed) == nuc_numbers[i], arr.ind = TRUE)
+        EBImage::imageData(nmask_watershed) == nuc_numbers[i], arr.ind = TRUE)
       
       df_nuclei_positions$pos_x[i] <- round(mean(dummy_coordinates[,1]))
       df_nuclei_positions$pos_y[i] <- round(mean(dummy_coordinates[,2]))
@@ -1274,12 +1276,12 @@ detectCilia <- function(input_dir_tif = NULL,
   
   # Add border of nuclei and save file
   Image_stack_numbers <- EBImage::Image(image_stack_numbers)
-  colorMode(Image_stack_numbers) <- "color"
-  colorMode(nmask_watershed) <- "gray"
+  EBImage::colorMode(Image_stack_numbers) <- "color"
+  EBImage::colorMode(nmask_watershed) <- "gray"
   
-  Image_stack_numbers <- paintObjects(x = nmask_watershed,
-                                      tgt = Image_stack_numbers,
-                                      col='#ff00ff')
+  Image_stack_numbers <- EBImage::paintObjects(x = nmask_watershed,
+                                               tgt = Image_stack_numbers,
+                                               col='#ff00ff')
   
   # Display the number of nuclei
   print(paste("Number of nuclei: ", nucNo, sep=""))
@@ -1348,24 +1350,20 @@ detectCilia <- function(input_dir_tif = NULL,
   df_parameterList <- cbind(df_OriginalParameterList, df_FinalParameterList)
   
   if(!is.null(df_parameterList)){
-    write.csv(df_parameterList,
-              file = file.path(output_dir, "parameter_list.csv"),
-              row.names = FALSE)
+    readr::write_csv(df_parameterList,
+              file = file.path(output_dir, "parameter_list.csv"))
     
-    write.csv2(df_parameterList,
-               file = file.path(output_dir, "parameter_list_de.csv"),
-               row.names = FALSE)
+    readr::write_csv2(df_parameterList,
+               file = file.path(output_dir, "parameter_list_de.csv"))
   }
   
   # Save the number of nuclei ----------------------------------------------
   df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
   if(!is.null(df_number_nuclei)){
-    write.csv(df_number_nuclei,
-              file = file.path(output_dir, "nuclei_number.csv"),
-              row.names = FALSE)
-    write.csv2(df_number_nuclei,
-               file = file.path(output_dir, "nuclei_number_de.csv"),
-               row.names = FALSE)
+    readr::write_csv(df_number_nuclei,
+              file = file.path(output_dir, "nuclei_number.csv"))
+    readr::write_csv2(df_number_nuclei,
+               file = file.path(output_dir, "nuclei_number_de.csv"))
   }
   
   
@@ -1383,13 +1381,11 @@ detectCilia <- function(input_dir_tif = NULL,
                                                  slice_distance)
   
   if(!is.null(df_cilium_summary)){
-    write.csv(df_cilium_summary,
-              file = file.path(output_dir, "cilium_summary.csv"),
-              row.names = FALSE)
+    readr::write_csv(df_cilium_summary,
+              file = file.path(output_dir, "cilium_summary.csv"))
     
-    write.csv2(df_cilium_summary,
-               file = file.path(output_dir, "cilium_summary_de.csv"),
-               row.names = FALSE)
+    readr::write_csv2(df_cilium_summary,
+               file = file.path(output_dir, "cilium_summary_de.csv"))
   }
   
   

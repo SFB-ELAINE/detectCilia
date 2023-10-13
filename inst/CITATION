@@ -1,10 +1,14 @@
-## R package reference generated from DESCRIPTION metadata
-citation(auto = meta)
-
-## NLME book
-bibentry(bibtype = "article",
-         title = "",
-         author = c(person(c("Kai"), "Budde-Sagert"),
-                    person(c("Simone"), "Krueger")),
-         year = "2023", publisher = "???", address = "???",
-         doi = "")
+bibentry(
+  "Article",
+  doi = "NN",
+  url = "NN",
+  year = 2023,
+  publisher = "NN",
+  volume = 00,
+  number = 00,
+  pages = 00,
+  key = "DetectCilia2023",
+  author = c(person("Kai", "Budde-Sagert"), person("Simone", "Krueger"), person("Clemens", "Sehlke"), person("Anika", "Jonitz-Heincke"), person("Robert", "David"), person("Rainer", "Bader"), person(c("Adelinde", "M."), "Uhrmacher")),
+  title = "Studying the influence of cell culture medium composition on ciliary length with detectCilia: An R package for automated detection and length measurement of primary cilia",
+  journal = "NN"
+)

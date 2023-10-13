@@ -1,0 +1,169 @@
+# -----------------------------------------------------------
+# CITATION file created with {cffr} R package, v0.5.0
+# See also: https://docs.ropensci.org/cffr/
+# -----------------------------------------------------------
+ 
+cff-version: 1.2.0
+message: 'To cite package "detectCilia" in publications use:'
+type: software
+license: GPL-3.0-or-later
+title: 'detectCilia: Detecting the lengths of primary cilia'
+version: 0.7.2
+doi: NN
+abstract: The package loads confocal fluorescence microscopy images and automatically
+  determines the positions and lengths of primary cilia of the cells and counts nuclei.
+authors:
+- family-names: Budde-Sagert
+  given-names: Kai
+  email: kai.budde-sagert@uni-rostock.de
+- name: c
+- family-names: c)
+  given-names: comment =
+preferred-citation:
+  type: article
+  title: 'Studying the influence of cell culture medium composition on ciliary length
+    with detectCilia: An R package for automated detection and length measurement
+    of primary cilia'
+  authors:
+  - family-names: Budde-Sagert
+    given-names: Kai
+    email: kai.budde-sagert@uni-rostock.de
+  - family-names: Krueger
+    given-names: Simone
+  - family-names: Sehlke
+    given-names: Clemens
+  - family-names: Jonitz-Heincke
+    given-names: Anika
+  - family-names: David
+    given-names: Robert
+  - family-names: Bader
+    given-names: Rainer
+  - family-names: Uhrmacher
+    given-names: Adelinde M.
+  doi: NN
+  year: '2023'
+  publisher:
+    name: NN
+  volume: '0'
+  issue: '0'
+  journal: NN
+  start: '0'
+repository-code: https://github.com/SFB-ELAINE/detectCilia
+url: https://github.com/SFB-ELAINE/detectCilia
+contact:
+- family-names: Budde-Sagert
+  given-names: Kai
+  email: kai.budde-sagert@uni-rostock.de
+references:
+- type: software
+  title: 'R: A Language and Environment for Statistical Computing'
+  notes: Depends
+  url: https://www.R-project.org/
+  authors:
+  - name: R Core Team
+  location:
+    name: Vienna, Austria
+  year: '2023'
+  institution:
+    name: R Foundation for Statistical Computing
+  version: '>= 4.0.0'
+- type: software
+  title: dplyr
+  abstract: 'dplyr: A Grammar of Data Manipulation'
+  notes: Imports
+  url: https://dplyr.tidyverse.org
+  repository: https://CRAN.R-project.org/package=dplyr
+  authors:
+  - family-names: Wickham
+    given-names: Hadley
+    email: hadley@rstudio.com
+    orcid: https://orcid.org/0000-0003-4757-117X
+  - family-names: François
+    given-names: Romain
+    orcid: https://orcid.org/0000-0002-2444-4226
+  - family-names: Henry
+    given-names: Lionel
+  - family-names: Müller
+    given-names: Kirill
+    orcid: https://orcid.org/0000-0002-1416-3412
+  year: '2023'
+  version: '>= 1.0.10'
+- type: software
+  title: EBImage
+  abstract: 'EBImage: Image processing and analysis toolbox for R'
+  notes: Imports
+  url: https://github.com/aoles/EBImage
+  repository: https://bioconductor.org/
+  authors:
+  - family-names: Oles
+    given-names: Andrzej
+  - family-names: Pau
+    given-names: Gregoire
+  - family-names: Smith
+    given-names: Mike
+  - family-names: Sklyar
+    given-names: Oleg
+  - family-names: Huber
+    given-names: Wolfgang
+  - family-names: Barry
+    given-names: with contributions from Joseph
+  - family-names: Marais
+    given-names: Philip A.
+  year: '2023'
+  version: '>= 4.40.0'
+- type: software
+  title: magrittr
+  abstract: 'magrittr: A Forward-Pipe Operator for R'
+  notes: Imports
+  url: https://magrittr.tidyverse.org
+  repository: https://CRAN.R-project.org/package=magrittr
+  authors:
+  - family-names: Bache
+    given-names: Stefan Milton
+    email: stefan@stefanbache.dk
+  - family-names: Wickham
+    given-names: Hadley
+    email: hadley@rstudio.com
+  year: '2023'
+  version: '>= 2.0.3'
+- type: software
+  title: readCzi
+  abstract: 'readCzi: Read czi image files, convert them to tifs, and save metadata'
+  notes: Imports
+  authors:
+  - name: c)
+  year: '2023'
+  version: '>= 0.2.3'
+- type: software
+  title: readr
+  abstract: 'readr: Read Rectangular Text Data'
+  notes: Imports
+  url: https://readr.tidyverse.org
+  repository: https://CRAN.R-project.org/package=readr
+  authors:
+  - family-names: Wickham
+    given-names: Hadley
+    email: hadley@rstudio.com
+  - family-names: Hester
+    given-names: Jim
+  - family-names: Bryan
+    given-names: Jennifer
+    email: jenny@rstudio.com
+    orcid: https://orcid.org/0000-0002-6983-2759
+  year: '2023'
+  version: '>= 2.1.3'
+- type: software
+  title: rlang
+  abstract: 'rlang: Functions for Base Types and Core R and ''Tidyverse'' Features'
+  notes: Imports
+  url: https://rlang.r-lib.org
+  repository: https://CRAN.R-project.org/package=rlang
+  authors:
+  - family-names: Henry
+    given-names: Lionel
+    email: lionel@rstudio.com
+  - family-names: Wickham
+    given-names: Hadley
+    email: hadley@rstudio.com
+  year: '2023'
+  version: '>= 1.0.6'

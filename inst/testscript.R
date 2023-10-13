@@ -1,6 +1,6 @@
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
-# Last changed: 2023/10/11
+# Last changed: 2023/10/13
 
 
 # Delete everything in the environment
@@ -16,7 +16,8 @@ if(!any(grepl(pattern = "groundhog", x = installed.packages(), ignore.case = TRU
 
 # Load packages
 library(groundhog)
-pkgs <- c("BiocManager", "devtools", "dplyr", "reticulate")
+pkgs <- c("BiocManager", "devtools", "dplyr", "magrittr",
+          "readr", "rlang", "reticulate")
 groundhog.library(pkgs, groundhog.day)
 
 if(!("EBImage" %in% utils::installed.packages())){
