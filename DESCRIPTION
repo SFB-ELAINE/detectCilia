@@ -20,6 +20,8 @@ Imports:
     readCzi (>= 0.2.3),
     readr (>= 2.1.3),
     rlang (>= 1.0.6)
+Remotes:
+    github::SFB-ELAINE/readCzi
 Encoding: UTF-8
 LazyData: true
 ByteCompile: TRUE
