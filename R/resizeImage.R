@@ -6,6 +6,7 @@
 #' @export addNumberToImage
 #' @param image An one to three-dimensional array of numbers between 0 and 1
 #' @param number_size_factor A number (factor for resizing the number)
+#' @returns An array (resized image).
 
 resizeImage <- function(image = NULL,
                         number_size_factor = 1){

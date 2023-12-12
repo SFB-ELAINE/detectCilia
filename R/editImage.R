@@ -10,6 +10,7 @@
 #' @param object_color A character (color of the staining of the object)
 #' @param threshold A number (that determines the brightness of a pixel to
 #' be counted as cilium pixel)
+#' @returns An array (changed image).
 
 editImage <- function(image = NULL,
                       object_color = NULL,

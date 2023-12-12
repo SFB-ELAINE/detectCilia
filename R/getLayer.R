@@ -7,6 +7,7 @@
 #' @export getLayer
 #' @param image An three-dimensional array of numbers between 0 and 1
 #' @param layer A character (color of the layer)
+#' @returns An array (specific channel of image).
 
 getLayer <- function(image = NULL,
                      layer = NULL){

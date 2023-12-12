@@ -1,16 +1,20 @@
-#' @title addNumberToImage
-#' @description Adds a number to the image layer
-#' @details Adds an integer to a x-y-3(rgb)-representation of an image.
-#' @aliases addnumbertoimage addNumbertoimage addNumberToimage 
-#' addnumberToImage addnumbertoImage
-#' @author Kai Budde-Sagert
+#' Add a number to an image layer
+#' 
+#' `addNumberToImage()` adds an image of an integer to a x-y-3(rgb)-
+#' representation of an image.
+#'
+#' @param image A numeric (three-dimensional) array of numbers between
+#' 0 and 1.
+#' @param number An integer that is to be added to the image.
+#' @param pos_x,pos_y An integer giving the x- and y-values of the starting
+#' pixel (upper left corner).
+#' @param number_size_factor A number for resizing the number image
+#' to be added.
+#' @param number_color A string reflecting the color of the number to be
+#' added.
+#'
+#' @return An array (image) with added number.
 #' @export addNumberToImage
-#' @param image An three-dimensional array of numbers between 0 and 1
-#' @param number A number (integer to be drawn/copied)
-#' @param pos_x A number (x-value for starting pixel (upper left corner))
-#' @param pos_y A number (y-value for starting pixel (upper left corner))
-#' @param number_size_factor A number (factor for resizing the number)
-#' @param number_color A string (color of thr number to be drawn)
 
 addNumberToImage <- function(image = NULL,
                              number = NULL,

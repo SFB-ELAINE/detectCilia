@@ -17,6 +17,9 @@ editImage(image = NULL, object_color = NULL, threshold = NULL)
 \item{threshold}{A number (that determines the brightness of a pixel to
 be counted as cilium pixel)}
 }
+\value{
+An array (changed image).
+}
 \description{
 Get the layer of the primary cilia
 }

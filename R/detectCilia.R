@@ -1,85 +1,122 @@
-#' @title detectCilia
-#' @description Main function for detecting cilia in images
-#' @details Input should be czi (ideally) or tif-format.
-#' At first, the cilia will be located by using a projection method.
-#' Afterward the length of a cilium is determined in the horizontal plane.
-#' The height in the vertical plane is being determined by the number of
-#' z-slices where a cilium can be found.
-#' The entire length of the cilium is being calculated with c=sqrt(a^2+b^2).
+#' Detect cilia in images
+#' 
+#' `detectCilia()` is the main function to detect cilia or similar small
+#' labelled objects in a CZI (ideally) or TIFF image. At first, the cilia
+#' will be located by using a projection method. Afterward, the length of
+#' a cilium is determined in the horizontal plane. The height in the
+#' vertical plane is being determined by the number of z-stack layers
+#' where a cilium is found. The entire length of the cilium is being
+#' calculated using Pythagoras' theorem (\code{c=sqrt(a^2+b^2)}).
 #' The output will be written in the current directory.
-#' Please be aware that the coordinate system is turned by 90° to the right.
-#' The origin of the x- and y-axes is in the upper-left corner of the image.
-#' (The x-axis points downwards and the y-axis to the right.)
-#' @aliases ciliaDetect detectcilia
-#' @author Kai Budde-Sagert
-#' @export detectCilia
+#' Please be aware that that the coordinate system is turned by 90° to the
+#' right. The origin of the x- and y-axes is in the upper-left corner of the
+#' image. (The x-axis points downwards and the y-axis to the right.)
+#'
+#' @param input_dir_tif Path to a directory containing z-stack slices in TIF
+#' format as a string.
+#' @param input_file_czi Path to a CZI file with the z-stack image as a string.
+#' @param output_dir Path to a directory where the results are to be saved
+#' as a string.
+#' @param cilium_color Color of the cilium staining as a string or single
+#' character ("r", "red", "g", "green", "b", or "blue").
+#' @param nucleus_color Color of the nuclei staining as a string or single
+#' character ("r", "red", "g", "green", "b", or "blue").
+#' @param projection_method_for_threshold_calculation Method as a string for
+#' calculating the z-stack projection which is used for calculating
+#' threshold to find cilia positions (either "mean" or "max").
+#' @param use_histogram_equalization_for_threshold_calculation A Boolean
+#' stating whether to use a histogram equalization algorithm for determining
+#' threshold values.
+#' @param threshold_by_density_of_cilium_pixels A Boolean.
+#'   * `TRUE` (the default): Disregard the custom threshold values (if given)
+#'   and, instead, use a function to calculate the binarization thresholds by
+#'   looking at the density of cilium color pixels found in the entire image.
+#'   * `FALSE`: Use custom threshold values.
+#' @param threshold_find A number between 0 and 1 as the minimum
+#' intensity of possible cilia pixels in the z-stack projection.
+#' @param threshold_connect A number between 0 and 1 (and usually
+#' lower than `threshold_find`) as the minimum intensity to find possible
+#' cilia pixels in every z-stack layer. Only those pixels are kept which
+#' are close to already found ciliary structures.
+#' @param vicinity_combine Number of pixels (integer) defining the
+#' neighborhood for combining found ciliary pixels in the z-stack
+#' projection to one cilium.
+#' @param vicinity_connect Number of pixels (integer) defining the
+#' neighborhood for combining found ciliary pixels in every z-stack layer
+#' to one cilium.
+#' @param min_cilium_area Minimum number of pixels (integer) a cilium should
+#' consist of.
+#' @param max_cilium_area Maximum number of pixels (integer) a cilium should
+#' consist of.
+#' @param number_size_factor A number for resizing the number image
+#' to be added.
+#' @param pixel_size A number indicating the size (length and height) of one
+#' pixel in micrometers
+#' @param slice_distance A number showing the distance of two consecutive
+#' z-stack layers in micrometers.
+#' @param nuc_mask_width_height Number of pixels (integer) for nuclei detection.
+#'
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
-#' @param input_dir_tif A character (directory that contains z-stack slices
-#' in the tif format)
-#' @param input_file_czi A character (a file with the z-stack image as czi)
-#' @param output_dir A character (directory where the results should be saved)
-#' @param cilium_color A character (color of the cilium staining)
-#' @param nucleus_color A character (color of the nuclei staining)
-#' @param projection_method A character (defines the method for the z projection:
-#' either "mean" or "max")
-#' @param threshold_by_density_of_cilium_pixels A Boolean (disregard the
-#' threshold values if true and instead use a custom function to calculate
-#' the thresholds by looking at the density of cilium color pixels found in
-#' the image)
-#' @param threshold_find A number (minimum intensity to find cilia)
-#' @param threshold_connect A number (minimum intensity to connect to
-#' already detected cilium)
-#' @param vicinity_combine A number (neighborhood to look for structures
-#' belonging to the same cilium (exclusion volume))
-#' @param vicinity_connect A number (neighborhood to look for pixels that
-#' belong to a given cilium (inclusion volume))
-#' @param min_cilium_area A number (gives the minimum area of a cilium to be
-#' detected)
-#' @param max_cilium_area A number (gives the maximum area of a cilium to be
-#' detected)
-#' @param number_size_factor A number (factor for resizing the digit image)
-#' @param pixel_size A number (size of one pixel in micrometer)
-#' @param slice_distance A number (distance of two consecutive slices in
-#' z-direction in micrometer)
-#' @param nuc_mask_width_height A number (width and height for detecting
-#' nuclei)
+#'
+#' @returns A list with the following content: 
+#' 1) tibble `df_parameterlist` with information about used parameters,
+#' 2) tibble `df_cilium_information`with information about found cilia,
+#' 3) tibble `df_cilium_summary` with lengths of found cilia.
+#' @export detectCilia
+#'
+#' @examples
+#' # Detect all cilia (red structures) (and nuclei (blue structures)) in
+#' # a CZI image
+#' detectCilia(input_file_czi = input_file, output_dir = output_dir,
+#' cilium_color = "red", pixel_size = 0.219645, slice_distance = 0.31607,
+#' nuc_mask_width_height = 100) 
 
-detectCilia <- function(input_dir_tif = NULL,
-                        input_file_czi = NULL,
-                        output_dir = NULL,
-                        cilium_color = "red",
-                        nucleus_color = "blue",
-                        projection_method = "mean",
-                        threshold_by_density_of_cilium_pixels = TRUE,
-                        threshold_find = NULL,
-                        threshold_connect = NULL,
-                        vicinity_combine = NULL,
-                        vicinity_connect = NULL,
-                        min_cilium_area = NULL,
-                        max_cilium_area = NULL,
-                        number_size_factor = NULL,
-                        pixel_size = NULL,
-                        slice_distance = NULL,
-                        nuc_mask_width_height = NULL) {
+detectCilia <- function(
+  input_dir_tif = NULL,
+  input_file_czi = NULL,
+  output_dir = NULL,
+  cilium_color = "red",
+  nucleus_color = "blue",
+  projection_method_for_threshold_calculation = "max",
+  threshold_by_density_of_cilium_pixels = TRUE,
+  use_histogram_equalization_for_threshold_calculation = FALSE,
+  threshold_find = NULL,
+  threshold_connect = NULL,
+  vicinity_combine = NULL,
+  vicinity_connect = NULL,
+  min_cilium_area = NULL,
+  max_cilium_area = NULL,
+  number_size_factor = NULL,
+  pixel_size = NULL,
+  slice_distance = NULL,
+  nuc_mask_width_height = NULL) {
   
   
-  # Basics -----------------------------------------------------------------
+  # 0. Basics --------------------------------------------------------------
   .old.options <- options()
   on.exit(options(.old.options))
   
   options(stringsAsFactors = FALSE, warn=-1)
   
+  if(!("EBImage" %in% utils::installed.packages())){
+    print("Installing EBImage.")
+    BiocManager::install("EBImage")
+  }
+  
+  
+  
   # ---------------------------------------------------------------------- #
   # ----------------------- 1. Image preparation ------------------------- #
   # ---------------------------------------------------------------------- #
   
-  # Read image data --------------------------------------------------------
+  # 1. Image preparation ---------------------------------------------------
+  # 1.1 Read image data ----------------------------------------------------
   
   # Input directory must be submitted. If not: close function call.
   if(is.null(input_dir_tif) && is.null(input_file_czi)){
     print(paste("Please call the function with an input directory ",
-                "which contains z-stack tif images with colored cilia or",
+                "which contains z-stack TIF images with colored cilia or",
                 "with an input czi file.",
                 sep=""))
     return()
@@ -92,7 +129,7 @@ detectCilia <- function(input_dir_tif = NULL,
     image_format <- "tif"
   }
   
-  # Save the file names of tif images
+  # Save the file names of TIF images
   if(image_format == "tif"){
     file_names_tif <- list.files(path = input_dir_tif)
     file_names_tif <- file_names_tif[grepl("tif", file_names_tif)]
@@ -191,7 +228,7 @@ detectCilia <- function(input_dir_tif = NULL,
     image_data <- readCzi::readCzi(input_file = input_file_czi)
     
     
-    # Read metadata and get missing parameter values -----------------------
+    # 1.2 Read metadata and get missing parameter values -------------------
     df_metadata <- readCzi::readCziMetadata(input_file = input_file_czi,
                                             save_metadata = FALSE)
     
@@ -224,35 +261,39 @@ detectCilia <- function(input_dir_tif = NULL,
   Image_data <- EBImage::Image(data = image_data, colormode = "Color")
   
   
-  # Calculate missing input parameter values -------------------------------
+  # 1.3 Calculate missing input parameter values ---------------------------
   
   
-  # Determine min and max sizes of a primary cilium
-  # (We assume it to be between 1um and 5um long and 0.5um and 2um wide.)
+  # Determine min and max sizes of a primary cilium (in pixels)
+  # (We assume it to be between 1um and 5um long and 0.25um and 1um wide.)
   
-  max_cilium_area_in_um2 <- 5*2
-  min_cilium_area_in_um2 <- 1*0.5
+  max_cilium_area_in_um2 <- 5*1
+  min_cilium_area_in_um2 <- 1*0.25
   
   if(is.null(min_cilium_area)){
-    min_cilium_area <- floor(x = min_cilium_area_in_um2 / pixel_size)
+    min_cilium_area <- floor(x = min_cilium_area_in_um2 / pixel_size / pixel_size)
   }
   
   if(is.null(max_cilium_area)){
-    max_cilium_area <- ceiling(x = max_cilium_area_in_um2 / pixel_size)
+    max_cilium_area <- ceiling(x = max_cilium_area_in_um2 / pixel_size / pixel_size)
   }
   
   rm(list = c("max_cilium_area_in_um2", "min_cilium_area_in_um2"))
   
-  # Determine the vicinity to combine cilium points during the first search (find)
+  # Determine the vicinity to combine cilium points during the first search
+  # (finding phase):
+  # Use twice the distance assuming a large cilium being a square
   if(is.null(vicinity_combine)){
-    vicinity_combine <- ceiling(x = max_cilium_area / 2)
+    # Radius of a large cilium
+    vicinity_combine <- ceiling(x = 2*sqrt(max_cilium_area))
   }
   
   # Determine the vicinity to connect cilium points during connecting phase
   # (a newly found point may not be further away than this many points
-  # from an existing cilium)
+  # from an existing cilium):
+  # Use twice the distance assuming a small cilium being a square
   if(is.null(vicinity_connect)){
-    vicinity_connect <- ceiling(x = min_cilium_area / 2)
+    vicinity_connect <- floor(x = 2*sqrt(min_cilium_area))
   }
   
   # Determine the nuclei mask area
@@ -276,46 +317,40 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   
-  # Calculate the projection of the z-stack layers -------------------------
+  # 1.4 Calculate the projection of the z-stack layers ---------------------
   
-  # Create empty stack image
-  image_stack <- array(0, dim = dim(image_data)[1:3])
-  #Image_stack <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
+  # Create empty projection image
+  image_projection_max <- array(0, dim = dim(image_data)[1:3])
+  image_projection_mean <- array(0, dim = dim(image_data)[1:3])
+  #Image_projection <- EBImage::Image(data = array(0, dim = dim(Image_data)[1:3]),
   #                              colormode = "Color")
   
-  if(projection_method == "max"){
-    
-    # Stack with max values
-    for(i in 1:dim(image_data)[3]){
-      image_stack[,,i] = apply(image_data[,,i,], c(1,2), max)
-    }
-    
-  }else if(projection_method == "mean"){
-    
-    # Stack with mean values
-    for(i in 1:dim(image_data)[3]){
-      image_stack[,,i] = apply(image_data[,,i,], c(1,2), mean)
-    }
-    
-  }else{
-    print("Please choose either max or mean as zstack projection method.")
+  # Use max values for projection
+  for(i in 1:dim(image_data)[3]){
+    image_projection_max[,,i] = apply(image_data[,,i,], c(1,2), max)
+  }
+  
+  # Use mean values for projection
+  for(i in 1:dim(image_data)[3]){
+    image_projection_mean[,,i] = apply(image_data[,,i,], c(1,2), mean)
   }
   
   rm(i)
   
-  Image_stack <- EBImage::Image(data = image_stack, colormode = "Color")
+  Image_projection_max <- EBImage::Image(data = image_projection_max, colormode = "Color")
+  Image_projection_mean <- EBImage::Image(data = image_projection_mean, colormode = "Color")
   
-  # Enhance contrast of stack image
-  Image_stack_histogram_equalization <- EBImage::clahe(x = Image_stack)
+  
   
   # ---------------------------------------------------------------------- #
   # ------------------------ 2. Nuclei detection ------------------------- #
   # ---------------------------------------------------------------------- #
   
-  # Find and count all nuclei -----------------------------------------------
+  # 2. Nuclei detection ----------------------------------------------------
+  # 2.1 Find and count all nuclei using the max projection -----------------
   
   # Save only color layer of nuclei
-  Image_nuclei <- getLayer(image = Image_stack, layer = nucleus_color)
+  Image_nuclei <- getLayer(image = Image_projection_max, layer = nucleus_color)
   
   # Smooth the image
   Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = 5)
@@ -397,15 +432,17 @@ detectCilia <- function(input_dir_tif = NULL,
   # Count number of cells
   nucNo <- max(nmask_watershed)
   
+  
+  
   # ---------------------------------------------------------------------- #
-  # ------------------------- 3. Cilia detection ------------------------- #
+  # ------------ 3. Cilia detection in z-stack projection ---------------- #
   # ---------------------------------------------------------------------- #
   
-  # Calculate the cilia detection thresholds -------------------------------
+  # 3. Cilia detection in z-stack projection -------------------------------
+  # 3.1 Calculate the cilia detection thresholds ---------------------------
   
   # Calculate "threshold_find" and "threshold_connect" if
   # "threshold_by_density_of_cilium_pixels == TRUE"
-  # The thresholds will be calculated with the contrast-enhanced stack image
   
   if(threshold_by_density_of_cilium_pixels == TRUE){
     
@@ -413,26 +450,49 @@ detectCilia <- function(input_dir_tif = NULL,
                 "threshold_by_density_of_cilium_pixels was given as ",
                 "TRUE.", sep=""))
     
-    Image_cilia_layer <- getLayer(image = Image_stack,
-                                  layer = cilium_color)
-    Image_cilia_layer_histeq <- getLayer(image = Image_stack_histogram_equalization,
-                                         layer = cilium_color)
+    # Enhance contrast of image projection
+    if(projection_method_for_threshold_calculation == "max"){
+      Image_projection_histogram_equalization <- EBImage::clahe(x = Image_projection_max)
+      Image_projection <- Image_projection_max
+    }else if(projection_method_for_threshold_calculation == "mean"){
+      Image_projection_histogram_equalization <- EBImage::clahe(x = Image_projection_mean)
+      Image_projection <- Image_projection_mean
+    }else{
+      print("Please choose either max or mean as zstack projection method.")
+    }
     
-    ratio_of_cilia_pixels <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
-      (dim(Image_stack)[1]*dim(Image_stack)[2])
+    # Get image channel with ciliary pixels for finding cilia
+    if(use_histogram_equalization_for_threshold_calculation){
+      Image_cilia_layer_find <- getLayer(image = Image_projection_histogram_equalization,
+                                         layer = cilium_color)
+    }else{
+      Image_cilia_layer_find <- getLayer(image = Image_projection,
+                                         layer = cilium_color)
+    }
+    
+    # ratio_of_cilia_pixels <- nucNo * ((min_cilium_area + max_cilium_area)/2) /
+    #   (dim(Image_projection_max)[1]*dim(Image_projection_max)[2])
+    
+    # Calculate ratio of possible cilium pixels determined by the number of
+    # identified cells, the image size, and the geometric mean of the cilium area
+    ratio_of_cilia_pixels <- nucNo * (sqrt(min_cilium_area * max_cilium_area)) /
+      (dim(Image_projection)[1]*dim(Image_projection)[2])
     
     print(paste("Intensity quantile to find cilia: ",
                 (1-ratio_of_cilia_pixels), sep=""))
     
     # threshold_find
-    threshold_find_histeq <- quantile(Image_cilia_layer_histeq,
-                                      (1-ratio_of_cilia_pixels), na.rm = TRUE)
-    threshold_find_histeq <- as.numeric(threshold_find_histeq)
+    threshold_find <- quantile(Image_cilia_layer_find,
+                               (1-ratio_of_cilia_pixels), na.rm = TRUE)
+    threshold_find <- as.numeric(threshold_find)
     
-    threshold_find <- threshold_find_histeq
+    # Use the mean projection for finding threshold to connect cilia
+    # in every z-stack layer
+    Image_cilia_layer_connect <- getLayer(image = Image_projection_mean,
+                                          layer = cilium_color)
     
     # threshold_connect
-    threshold_connect <- quantile(Image_cilia_layer,
+    threshold_connect <- quantile(Image_cilia_layer_connect,
                                   (1-ratio_of_cilia_pixels), na.rm = TRUE)
     threshold_connect <- as.numeric(threshold_connect)
     
@@ -444,16 +504,24 @@ detectCilia <- function(input_dir_tif = NULL,
                 sep=""))
   }
   
-  # Save a mask of possible cilia ------------------------------------------
+  # 3.2 Save a mask of possible cilia --------------------------------------
   
-  # Save only color layer of cilia
-  Image_cilia_histeq <- editImage(image = Image_stack_histogram_equalization,
-                                  object_color = cilium_color,
-                                  threshold = threshold_find)
+  # Get mask of possible cilia
+  if(use_histogram_equalization_for_threshold_calculation){
+    Image_cilia <- editImage(
+      image        = Image_projection_histogram_equalization,
+      object_color = cilium_color,
+      threshold    = threshold_find)
+  }else{
+    Image_cilia <- editImage(
+      image        = Image_projection,
+      object_color = cilium_color,
+      threshold    = threshold_find)
+  }
   
-  #display(Image_cilia_histeq)
+  #display(Image_cilia)
   
-  list_of_cilium_points <- which(Image_cilia_histeq > 0, arr.ind = T)
+  list_of_cilium_points <- which(Image_cilia > 0, arr.ind = T)
   
   
   # Exit function because no cilium could be found
@@ -463,10 +531,10 @@ detectCilia <- function(input_dir_tif = NULL,
     print("No cilium found.")
     
     # (The next few lines are also found in the end of this function)
-    Image_stack_histogram_equalization_normalized <-
-      EBImage::normalize(Image_stack_histogram_equalization)
+    Image_projection_histogram_equalization_normalized <-
+      EBImage::normalize(Image_projection_histogram_equalization)
     
-    EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+    EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                         files = file.path(output_dir,
                                           paste(input_file_name,
                                                 "_stack_cilia_all_histogram_equalized_normalized.tif",
@@ -485,7 +553,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     # All parameter values
     parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
-                         "nucleus_color", "projection_method",
+                         "nucleus_color", "projection_method_for_threshold_calculation",
                          "threshold_by_density_of_cilium_pixels",
                          "threshold_find", "threshold_connect",
                          "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
@@ -514,18 +582,18 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_parameterList)){
       readr::write_csv(df_parameterList,
-                file = file.path(output_dir, "parameter_list.csv"))
+                       file = file.path(output_dir, "parameter_list.csv"))
       readr::write_csv2(df_parameterList,
-                 file = file.path(output_dir, "parameter_list_de.csv"))
+                        file = file.path(output_dir, "parameter_list_de.csv"))
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
       readr::write_csv(df_number_nuclei,
-                file = file.path(output_dir, "nuclei_number.csv"))
+                       file = file.path(output_dir, "nuclei_number.csv"))
       readr::write_csv2(df_number_nuclei,
-                 file = file.path(output_dir, "nuclei_number_de.csv"))
+                        file = file.path(output_dir, "nuclei_number_de.csv"))
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -537,10 +605,10 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_cilium_summary)){
       readr::write_csv(df_cilium_summary,
-                file = file.path(output_dir, "cilium_summary.csv"))
+                       file = file.path(output_dir, "cilium_summary.csv"))
       
       readr::write_csv2(df_cilium_summary,
-                 file = file.path(output_dir, "cilium_summary_de.csv"))
+                        file = file.path(output_dir, "cilium_summary_de.csv"))
     }
     
     return(NULL)
@@ -548,7 +616,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   
-  # Clean cilium pixels ----------------------------------------------------
+  # 3.2 Clean found cilium pixels ------------------------------------------
   
   df_cilium_points <- data.frame(list_of_cilium_points)
   
@@ -559,31 +627,51 @@ detectCilia <- function(input_dir_tif = NULL,
   rm(list_of_cilium_points)
   
   # Delete all found pixels that have no other found pixels in the
-  # neighborhood (+-1)
+  # direct neighborhood (+-1)
   df_cilium_points$possibleCilium <- FALSE
   
-  for(i in 1:length(df_cilium_points$pos_x)){
-    
-    .pos_x_distance <- df_cilium_points$pos_x[i] -
-      df_cilium_points$pos_x
-    
-    .pos_y_distance <- df_cilium_points$pos_y[i] -
-      df_cilium_points$pos_y
-    
-    .pos_x_distance[abs(.pos_x_distance) <= 1] <- 0
-    .pos_y_distance[abs(.pos_y_distance) <= 1] <- 0
-    
-    .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
-    if(sum(.distance == 0) > 1){
-      df_cilium_points$possibleCilium[.distance == 0] <- TRUE
+  # for(i in 1:length(df_cilium_points$pos_x)){
+  #   
+  #   .pos_x_distance <- df_cilium_points$pos_x[i] -
+  #     df_cilium_points$pos_x
+  #   
+  #   .pos_y_distance <- df_cilium_points$pos_y[i] -
+  #     df_cilium_points$pos_y
+  #   
+  #   .pos_x_distance[abs(.pos_x_distance) <= 1] <- 0
+  #   .pos_y_distance[abs(.pos_y_distance) <= 1] <- 0
+  #   
+  #   .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+  #   if(sum(.distance == 0) > 1){
+  #     df_cilium_points$possibleCilium[.distance == 0] <- TRUE
+  #   }
+  # }
+  # rm(i)
+  
+  neighborhood <- 1
+  for(jx in -neighborhood:neighborhood){
+    for(jy in -neighborhood:neighborhood){
+      if(!(jx == 0 && jy == 0)){
+        # Shift pixels accordingly and check for equality
+        df_cilium_points_shifted <- df_cilium_points
+        df_cilium_points_shifted$pos_x <-
+          df_cilium_points_shifted$pos_x + jx
+        df_cilium_points_shifted$pos_y <-
+          df_cilium_points_shifted$pos_y + jy
+        equal_positions <- paste(df_cilium_points$pos_x,
+                                 df_cilium_points$pos_y, sep= ", ") %in%
+          paste(df_cilium_points_shifted$pos_x,
+                df_cilium_points_shifted$pos_y, sep= ", ")
+        df_cilium_points$possibleCilium[equal_positions] <- TRUE
+      }
     }
   }
-  rm(i)
+  rm(list = c("jx", "jy", "df_cilium_points_shifted"))
   
   df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
   
   
-  # Determine the cilium number for each cilium found (Combine all cilium
+  # Determine the cilium number of each cilium found (Combine all cilium
   # pixels that are no less than vicinity_combine apart)
   
   df_cilium_points$ciliumNumber <- 0
@@ -636,25 +724,30 @@ detectCilia <- function(input_dir_tif = NULL,
     # Advance i to the next row which contains 0 as the cilium number
     i <- which(df_cilium_points$ciliumNumber==0)[1]
   }
+  rm(i)
   
-  # Delete all pixels that are not bright enough (less than 0.75*median)
+  
+  # Delete all ciliary pixels that are not bright enough
+  # (less than 0.75*median)
+  min_intensity_factor <- 0.75
   for(i in unique(df_cilium_points$ciliumNumber)){
     
     indices <- cbind(df_cilium_points$pos_x[df_cilium_points$ciliumNumber == i],
                      df_cilium_points$pos_y[df_cilium_points$ciliumNumber == i])
     
-    cilium_intensities <- Image_cilia_layer[indices]
+    cilium_intensities <- Image_cilia_layer_find[indices]
     
-    lower_limit <- 0.75 * median(cilium_intensities, na.rm = TRUE)
+    lower_limit <- min_intensity_factor * median(cilium_intensities, na.rm = TRUE)
     keep_pixels <- cilium_intensities > lower_limit 
     
     df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- keep_pixels
   }
+  rm(i)
   
   df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
   
-  # Mark all structures that are too small and therefore may not be a cilium
   
+  # Mark all structures that are too small and therefore may not be a cilium
   for(i in unique(df_cilium_points$ciliumNumber)){
     if(sum(df_cilium_points$ciliumNumber == i) < min_cilium_area){
       df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
@@ -667,7 +760,7 @@ detectCilia <- function(input_dir_tif = NULL,
   # Mark all structures that are too large and therefore may not be a cilium
   
   for(i in unique(df_cilium_points$ciliumNumber)){
-    if(sum(df_cilium_points$ciliumNumber == i) > (1.5 * max_cilium_area)){
+    if(sum(df_cilium_points$ciliumNumber == i) > max_cilium_area){
       df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- FALSE
     }
   }
@@ -676,8 +769,12 @@ detectCilia <- function(input_dir_tif = NULL,
   # Delete all structures that are too small or too big
   df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
   
+  # Mark all structure that are not "well connected" (too many holes in between)
+  # TODO: Look for structures having pixels not connected to the rest
+  # (not necessary right now)
   
-  # Delete all cilia that touch a border of the image
+  
+  # Delete all cilia touching a border of the image
   # (including one pixel in between)
   
   # Coordinate system:
@@ -696,6 +793,7 @@ detectCilia <- function(input_dir_tif = NULL,
   cilia_at_right_border   <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_x==dim_image_x | df_cilium_points$pos_x==(dim_image_x-1)])
   cilia_at_bottom_border  <- unique(df_cilium_points$ciliumNumber[df_cilium_points$pos_y==dim_image_y | df_cilium_points$pos_y==(dim_image_y-1)])
   
+  # Remove found cilia touching the border
   if(length(cilia_at_left_border) > 0){
     df_cilium_points <- df_cilium_points[!(df_cilium_points$ciliumNumber %in% cilia_at_left_border),]
   }
@@ -712,13 +810,15 @@ detectCilia <- function(input_dir_tif = NULL,
   rm(list = c("cilia_at_left_border", "cilia_at_top_border",
               "cilia_at_right_border", "cilia_at_bottom_border"))
   
-  # Delete separated cilium parts that are not connected to the brightest
-  # cilium part.
+  
+  # In every found cilium (cluster), delete separated cilium parts that
+  # are not directly connected (being vicinity_connect apart) to the
+  # brightest part of that cilium
   
   df_cilium_points$disconnectedPart <- FALSE
   
   indices <- cbind(df_cilium_points$pos_x, df_cilium_points$pos_y)
-  df_cilium_points$fluorescence_intensity <- Image_cilia_layer_histeq[indices]
+  df_cilium_points$fluorescence_intensity <- Image_cilia_layer_find[indices]
   
   for(i in unique(df_cilium_points$ciliumNumber)){
     
@@ -746,15 +846,15 @@ detectCilia <- function(input_dir_tif = NULL,
       
       .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
       
-      # Get the cilium number (close cilium that has been detected)
+      # Get the cluster number (close cilium that has been detected)
       ClusterNumber_dummy <-
         unique(df_dummy$ClusterNumber[.distance == 0])
       
       if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
-        # Advance Cilium number because there is no Cilium close by
+        # Advance cluster number number because there is no Cilium close by
         ClusterNumber <- max(df_dummy$ClusterNumber) + 1
       }else{
-        # Points belong to already existing cilium
+        # Points belong to already existing cluster
         ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
       }
       
@@ -790,21 +890,29 @@ detectCilia <- function(input_dir_tif = NULL,
     df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
     
     # Keep only rows that have been found
-    df_cilium_points <- rbind(df_cilium_points, df_dummy)
+    if(i == unique(df_cilium_points$ciliumNumber)[1]){
+      df_cilium_points2 <- df_dummy
+    }else{
+      df_cilium_points2 <- rbind(df_cilium_points2, df_dummy)
+    }
     
+    # df_cilium_points <- rbind(df_cilium_points, df_dummy)
   }
-  rm(i)
-  rm(df_test)
-  rm(df_dummy)
+  rm(list = c("i", "df_test", "df_dummy"))
+  
+  # Delete old cilium point tibble
+  df_cilium_points <- df_cilium_points2
+  rm(df_cilium_points2)
   
   # Delete duplicated lines
-  df_cilium_points <- df_cilium_points[duplicated(df_cilium_points),]
+  # df_cilium_points <- df_cilium_points[duplicated(df_cilium_points),]
   
   # Sort cilia
   df_cilium_points <- df_cilium_points %>% 
-    dplyr::arrange(ciliumNumber)
+    dplyr::arrange(ciliumNumber, pos_x, pos_y)
   
-  # Drop disconnectedPart and column
+  
+  # Drop disconnectedPart and fluorescence intensity columns
   df_cilium_points <-
     df_cilium_points[,!names(df_cilium_points)=="disconnectedPart"]
   df_cilium_points <-
@@ -819,10 +927,10 @@ detectCilia <- function(input_dir_tif = NULL,
                 sep=""))
     
     # (The next few lines are also found in the end of this function)
-    Image_stack_histogram_equalization_normalized <-
-      EBImage::normalize(Image_stack_histogram_equalization)
+    Image_projection_histogram_equalization_normalized <-
+      EBImage::normalize(Image_projection_histogram_equalization)
     
-    EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+    EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                         files = file.path(output_dir,
                                           paste(input_file_name,
                                                 "_stack_cilia_all_histogram_equalized_normalized.tif",
@@ -841,7 +949,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     # All parameter values
     parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
-                         "nucleus_color", "projection_method",
+                         "nucleus_color", "projection_method_for_threshold_calculation",
                          "threshold_by_density_of_cilium_pixels",
                          "threshold_find", "threshold_connect",
                          "vicinity_combine", "vicinity_connect", "min_cilium_area", "max_cilium_area",
@@ -870,18 +978,18 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_parameterList)){
       readr::write_csv(df_parameterList,
-                file = file.path(output_dir, "parameter_list.csv"))
+                       file = file.path(output_dir, "parameter_list.csv"))
       readr::write_csv2(df_parameterList,
-                 file = file.path(output_dir, "parameter_list_de.csv"))
+                        file = file.path(output_dir, "parameter_list_de.csv"))
     }
     
     # Save the number of nuclei
     df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
     if(!is.null(df_number_nuclei)){
       readr::write_csv(df_number_nuclei,
-                file = file.path(output_dir, "nuclei_number.csv"))
+                       file = file.path(output_dir, "nuclei_number.csv"))
       readr::write_csv2(df_number_nuclei,
-                 file = file.path(output_dir, "nuclei_number_de.csv"))
+                        file = file.path(output_dir, "nuclei_number_de.csv"))
     }
     
     df_cilium_summary <- data.frame("cilium" = NA,
@@ -893,10 +1001,10 @@ detectCilia <- function(input_dir_tif = NULL,
     
     if(!is.null(df_cilium_summary)){
       readr::write_csv(df_cilium_summary,
-                file = file.path(output_dir, "cilium_summary.csv"))
+                       file = file.path(output_dir, "cilium_summary.csv"))
       
       readr::write_csv2(df_cilium_summary,
-                 file = file.path(output_dir, "cilium_summary_de.csv"))
+                        file = file.path(output_dir, "cilium_summary_de.csv"))
     }
     
     return(NULL)
@@ -911,8 +1019,7 @@ detectCilia <- function(input_dir_tif = NULL,
       .number
     .number <- .number + 1
   }
-  rm(i)
-  rm(.number)
+  rm(list = c("i", ".number"))
   
   df_cilium_points <- dplyr::select(df_cilium_points, -ciliumNumber)
   names(df_cilium_points)[names(df_cilium_points) == "ciliumNumber_NEW"] <- "ciliumNumber"
@@ -922,14 +1029,15 @@ detectCilia <- function(input_dir_tif = NULL,
     df_cilium_points[,!names(df_cilium_points)=="possibleCilium"]
   
   
-  # Save image with marked cilia
-  Image_stack_cilia <- Image_stack
+  # Save image with labelled cilia
+  Image_projection_cilia <- Image_projection
+  
   for(k in 1:length(df_cilium_points$pos_x)){
-    Image_stack_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 1] <- 1
-    Image_stack_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 2] <- 1
+    Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 1] <- 1
+    Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 2] <- 1
   }
   
-  EBImage::writeImage(x = Image_stack_cilia,
+  EBImage::writeImage(x = Image_projection_cilia,
                       files = file.path(output_dir,
                                         paste(input_file_name,
                                               "_stack_cilia_unconnected.tif",
@@ -938,13 +1046,19 @@ detectCilia <- function(input_dir_tif = NULL,
                       type = "tiff")
   
   
-  # Find in every z-stack layer the cilium pixels --------------------------
-  # belonging to a specific cilium by going through every image layer
-  # (i = 1 ... n) and finding cilium pixels that are connected to it
   
-  print("Connecting all images.")
+  # ---------------------------------------------------------------------- #
+  # -------------- 4. Cilia detection in z-stack layers ------------------ #
+  # ---------------------------------------------------------------------- #
   
-  # Add layer information to data frame
+  # 4. Cilia detection in z-stack layers -----------------------------------
+  # Find cilia pixels belonging to a specific cilium by going through every
+  # image layer (i = 1 ... n) and looking for ciliary pixels in the same
+  # region as existing cilia
+  
+  print("Connecting cilia in all z-stack layers.")
+  
+  # Add layer information to data frame (layer -1 == z-stack projection)
   df_cilium_points$layer <- -1
   
   # Save information in big data frame, which contains all layers
@@ -952,22 +1066,23 @@ detectCilia <- function(input_dir_tif = NULL,
   df_cilium_information <- df_cilium_points
   
   
-  # Add median fluorescence intensity per cilium
+  # Add median fluorescence intensity per cilium of mean projection
   df_cilium_median_intensity <- data.frame(ciliumNumber = unique(df_cilium_information$ciliumNumber),
-                                           median_stack_intensity = NA)
+                                           median_mean_projection_intensity = NA)
   
   for(i in unique(df_cilium_information$ciliumNumber)){
     
     indices <- cbind(df_cilium_points$pos_x[df_cilium_points$ciliumNumber == i],
                      df_cilium_points$pos_y[df_cilium_points$ciliumNumber == i])
     
-    cilium_intensities <- Image_cilia_layer[indices]
+    cilium_intensities <- Image_cilia_layer_connect[indices]
     
-    df_cilium_median_intensity$median_stack_intensity[df_cilium_median_intensity$ciliumNumber == i] <- median(cilium_intensities, na.rm = TRUE)
+    df_cilium_median_intensity$median_mean_projection_intensity[df_cilium_median_intensity$ciliumNumber == i] <- median(cilium_intensities, na.rm = TRUE)
   }
   rm(i)
   
   # Go through all layers (i = 1 .. n (layers) )
+  
   print("Finding cilia in every layer.")
   for(i in 1:dim(image_data)[4]){
     
@@ -980,7 +1095,7 @@ detectCilia <- function(input_dir_tif = NULL,
     
     Image_cilia_layer <- getLayer(image = Image, layer = cilium_color)
     
-    # Image of each layer with cilium channel
+    # Mask cilium channel
     Image_cilia_connect <- editImage(image = Image,
                                      object_color = cilium_color,
                                      threshold = threshold_connect)
@@ -1005,23 +1120,47 @@ detectCilia <- function(input_dir_tif = NULL,
       # Delete all pixels that have no connection to another pixel
       # Delete all found pixels that have no other found pixels in the
       # neighborhood (+-1)
-      for(j in 1:length(df_cilium_points_connect$pos_x)){
-        
-        .pos_x_distance <- df_cilium_points_connect$pos_x[j] -
-          df_cilium_points_connect$pos_x
-        
-        .pos_y_distance <- df_cilium_points_connect$pos_y[j] -
-          df_cilium_points_connect$pos_y
-        
-        .pos_x_distance[abs(.pos_x_distance) <= 1] <- 0
-        .pos_y_distance[abs(.pos_y_distance) <= 1] <- 0
-        
-        .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
-        if(sum(.distance == 0) > 1){
-          df_cilium_points_connect$possibleCilium[.distance == 0] <- TRUE
+      # print(paste0("TODO: 1 ", Sys.time()))
+      # for(j in 1:length(df_cilium_points_connect$pos_x)){
+      #   
+      #   .pos_x_distance <- df_cilium_points_connect$pos_x[j] -
+      #     df_cilium_points_connect$pos_x
+      #   
+      #   .pos_y_distance <- df_cilium_points_connect$pos_y[j] -
+      #     df_cilium_points_connect$pos_y
+      #   
+      #   .pos_x_distance[abs(.pos_x_distance) <= 1] <- 0
+      #   .pos_y_distance[abs(.pos_y_distance) <= 1] <- 0
+      #   
+      #   .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+      #   if(sum(.distance == 0) > 1){
+      #     df_cilium_points_connect$possibleCilium[.distance == 0] <- TRUE
+      #   }
+      # }
+      # rm(j)
+      
+      # print(paste0("TODO: 2 ", Sys.time()))
+      # Alternative
+      neighborhood <- 1
+      for(jx in -neighborhood:neighborhood){
+        for(jy in -neighborhood:neighborhood){
+          if(!(jx == 0 && jy == 0)){
+            # Shift pixels accordingly and check for equality
+            df_cilium_points_connect_shifted <- df_cilium_points_connect
+            df_cilium_points_connect_shifted$pos_x <-
+              df_cilium_points_connect_shifted$pos_x + jx
+            df_cilium_points_connect_shifted$pos_y <-
+              df_cilium_points_connect_shifted$pos_y + jy
+            equal_positions <- paste(df_cilium_points_connect$pos_x,
+                                     df_cilium_points_connect$pos_y, sep= ", ") %in%
+              paste(df_cilium_points_connect_shifted$pos_x,
+                    df_cilium_points_connect_shifted$pos_y, sep= ", ")
+            df_cilium_points_connect$possibleCilium[equal_positions] <- TRUE
+          }
         }
       }
-      rm(j)
+      rm(list = c("jx", "jy", "df_cilium_points_connect_shifted"))
+      
       
       df_cilium_points_connect <- df_cilium_points_connect[
         df_cilium_points_connect$possibleCilium,]
@@ -1031,6 +1170,7 @@ detectCilia <- function(input_dir_tif = NULL,
       if(nrow(df_cilium_points_connect) > 0){
         df_cilium_points_connect$ciliumNumber <- 0
         
+        # print(paste0("TODO: 2 ", Sys.time()))
         for(j in 1:nrow(df_cilium_points_connect)){
           
           .pos_x_distance <- df_cilium_points_connect$pos_x[j] -
@@ -1057,6 +1197,7 @@ detectCilia <- function(input_dir_tif = NULL,
               df_cilium_points$ciliumNumber[which(.distance == 0)[1]]
           }
         }
+        rm(j)
         
         # Delete rows that cannot be connected to an existing cilium
         df_cilium_points_connect <- df_cilium_points_connect[
@@ -1067,8 +1208,10 @@ detectCilia <- function(input_dir_tif = NULL,
           row.names(df_cilium_points_connect) <- NULL
           
           # Delete all pixels that are not bright enough
-          # (less than median intensity (of stack))
+          # (less than median intensity (of projection))
           df_cilium_points_connect$possibleCilium <- FALSE
+          
+          # print(paste0("TODO: 3 ", Sys.time()))
           for(k in unique(df_cilium_points_connect$ciliumNumber)){
             
             indices <- cbind(df_cilium_points_connect$pos_x[
@@ -1078,17 +1221,22 @@ detectCilia <- function(input_dir_tif = NULL,
             
             cilium_intensities <- Image_cilia_layer[indices]
             
-            lower_limit <- df_cilium_median_intensity$median_stack_intensity[
+            lower_limit <- df_cilium_median_intensity$median_mean_projection_intensity[
               df_cilium_median_intensity$ciliumNumber == k]
-            keep_pixels <- cilium_intensities > lower_limit 
+            keep_pixels <- cilium_intensities > lower_limit
             
             df_cilium_points_connect$possibleCilium[
               df_cilium_points_connect$ciliumNumber == k] <- keep_pixels
           }
           rm(k)
+          
           df_cilium_points_connect <- df_cilium_points_connect[
             df_cilium_points_connect$possibleCilium,]
           
+          # print(paste0("TODO: 4 ", Sys.time()))
+          
+          
+          # Mark all structures that are too small and therefore may not be a cilium
           for(k in unique(df_cilium_points_connect$ciliumNumber)){
             if(sum(df_cilium_points_connect$ciliumNumber == k) < min_cilium_area){
               df_cilium_points_connect$possibleCilium[
@@ -1096,23 +1244,34 @@ detectCilia <- function(input_dir_tif = NULL,
             }
           }
           rm(k)
+          
+          # Mark all structures that are too large and therefore may not be a cilium
+          for(k in unique(df_cilium_points_connect$ciliumNumber)){
+            if(sum(df_cilium_points_connect$ciliumNumber == k) > max_cilium_area){
+              df_cilium_points_connect$possibleCilium[df_cilium_points_connect$ciliumNumber == k] <- FALSE
+            }
+          }
+          rm(k)
+          
+          
           df_cilium_points_connect <- df_cilium_points_connect[
             df_cilium_points_connect$possibleCilium,]
           
           
           if(nrow(df_cilium_points_connect) > 0){
-            # Drop information that it is cilia
-            df_cilium_points_connect <- df_cilium_points_connect[-3]
             
-            df_cilium_points_connect$layer <- i
+            # Drop "possibleCilium" column
+            df_cilium_points_connect <- 
+              df_cilium_points_connect[ ,!names(df_cilium_points_connect) ==
+                                          "possibleCilium"]
             
             # Save the layer and append it to big data frame
-            
-            # Save the positions of the cilia
+            df_cilium_points_connect$layer <- i
             df_cilium_information <- rbind(df_cilium_information,
                                            df_cilium_points_connect)
             
-            # Save image with marked cilia
+            # Save image with labelled cilia
+            # print(paste0("TODO: 5 ", Sys.time()))
             for(k in 1:length(df_cilium_points_connect$pos_x)){
               Image[df_cilium_points_connect$pos_x[k],
                     df_cilium_points_connect$pos_y[k], 1] <- 1
@@ -1135,13 +1294,16 @@ detectCilia <- function(input_dir_tif = NULL,
     }
   }
   
-  rm(i)
-  rm(Image)
-  rm(Image_cilia_layer)
+  rm(list = c("i", "Image", "Image_cilia_layer"))
   
   
   
-  # Save a data frame with all cilia information ---------------------------
+  # ---------------------------------------------------------------------- #
+  # -------------------------- 5. Save results --------------------------- #
+  # ---------------------------------------------------------------------- #
+  
+  # 5. Save results --------------------------------------------------------
+  # 5.1 Save a data frame with all cilia information -----------------------
   
   # Save all locations of all cilia (independent from the z layer where it
   # was found being found)
@@ -1153,7 +1315,7 @@ detectCilia <- function(input_dir_tif = NULL,
   df_cilium_all <- df_cilium_all[
     !duplicated(df_cilium_all$xy),]
   
-  df_cilium_all <- df_cilium_all[,-c(5)]
+  df_cilium_all <- df_cilium_all[,!names(df_cilium_all)=="xy"]
   df_cilium_all$layer <- -99
   
   df_cilium_all <- dplyr::arrange(df_cilium_all, ciliumNumber, pos_y, pos_x)
@@ -1163,19 +1325,24 @@ detectCilia <- function(input_dir_tif = NULL,
   # Add information of all cilium coordinates as layer -99 to data frame
   df_cilium_information <- rbind(df_cilium_information, df_cilium_all)
   
-  # Save the projection image with cilium information ----------------------
+  # 5.2 Save the projection image with cilium information ------------------
   
-  # Mark all cilia coordinates in a new stack image
-  Image_stack_cilia_connected <- Image_stack
-  
+  # Label all cilia coordinates in a new projection image
+  if(use_histogram_equalization_for_threshold_calculation){
+    Image_projection_cilia_connected <- Image_projection_histogram_equalization
+  }else if(projection_method_for_threshold_calculation == "max"){
+    Image_projection_cilia_connected <- Image_projection_max
+  }else if(projection_method_for_threshold_calculation == "mean"){
+    Image_projection_cilia_connected <- Image_projection_mean
+  }
   
   for(k in 1:length(df_cilium_all$pos_x)){
-    Image_stack_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
-    Image_stack_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 2] <- 1
+    Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
+    Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 2] <- 1
   }
   rm(k)
   
-  EBImage::writeImage(x = Image_stack_cilia_connected,
+  EBImage::writeImage(x = Image_projection_cilia_connected,
                       files = file.path(output_dir,
                                         paste(input_file_name,
                                               "_stack_cilia_connected.tif",
@@ -1185,9 +1352,9 @@ detectCilia <- function(input_dir_tif = NULL,
   
   
   
-  # Add cilium numbers to image --------------------------------------------
-  Image_stack_numbers <- Image_stack_cilia_connected
-  image_stack_numbers <- as.array(Image_stack_numbers)
+  # 5.3 Add cilium numbers to image ----------------------------------------
+  Image_projection_numbers <- Image_projection_cilia_connected
+  image_projection_numbers <- as.array(Image_projection_numbers)
   
   for(i in unique(df_cilium_all$ciliumNumber) ){
     ciliumNumber <- i
@@ -1196,18 +1363,18 @@ detectCilia <- function(input_dir_tif = NULL,
     pos_y <- df_cilium_all$pos_y[df_cilium_all$ciliumNumber == i][
       length(df_cilium_all$pos_y[df_cilium_all$ciliumNumber == i])]
     
-    image_stack_numbers <- addNumberToImage(image = image_stack_numbers,
-                                            number = ciliumNumber,
-                                            pos_x = pos_x,
-                                            pos_y = pos_y,
-                                            number_size_factor = number_size_factor,
-                                            number_color = "red")
+    image_projection_numbers <- addNumberToImage(image = image_projection_numbers,
+                                                 number = ciliumNumber,
+                                                 pos_x = pos_x,
+                                                 pos_y = pos_y,
+                                                 number_size_factor = number_size_factor,
+                                                 number_color = "red")
   }
   rm(i)
   
-  Image_stack_numbers <- EBImage::Image(data = image_stack_numbers,
-                                        colormode = "color")
-  EBImage::writeImage(x = Image_stack_numbers,
+  Image_projection_numbers <- EBImage::Image(data = image_projection_numbers,
+                                             colormode = "color")
+  EBImage::writeImage(x = Image_projection_numbers,
                       files = file.path(output_dir,
                                         paste(input_file_name,
                                               "_stack_cilia_all_numbers.tif",
@@ -1217,7 +1384,7 @@ detectCilia <- function(input_dir_tif = NULL,
   
   
   
-  # Add nuclei and cilium numbers to image ---------------------------------
+  # 5.4 Add nuclei and cilium numbers to image -----------------------------
   
   # Include numbers of nuclei
   table_nmask_watershed <- table(nmask_watershed)
@@ -1253,16 +1420,16 @@ detectCilia <- function(input_dir_tif = NULL,
     # Add nuclei numbers to image
     for(i in 1:length(nuc_numbers)){
       
-      image_stack_numbers <- addNumberToImage(
-        image = image_stack_numbers,
+      image_projection_numbers <- addNumberToImage(
+        image = image_projection_numbers,
         number = i,
         pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
         pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
         number_size_factor = number_size_factor,
         number_color = "green")
       
-      image_stack_numbers <- addNumberToImage(
-        image = image_stack_numbers,
+      image_projection_numbers <- addNumberToImage(
+        image = image_projection_numbers,
         number = i,
         pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
         pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
@@ -1275,18 +1442,18 @@ detectCilia <- function(input_dir_tif = NULL,
   }
   
   # Add border of nuclei and save file
-  Image_stack_numbers <- EBImage::Image(image_stack_numbers)
-  EBImage::colorMode(Image_stack_numbers) <- "color"
+  Image_projection_numbers <- EBImage::Image(image_projection_numbers)
+  EBImage::colorMode(Image_projection_numbers) <- "color"
   EBImage::colorMode(nmask_watershed) <- "gray"
   
-  Image_stack_numbers <- EBImage::paintObjects(x = nmask_watershed,
-                                               tgt = Image_stack_numbers,
-                                               col='#ff00ff')
+  Image_projection_numbers <- EBImage::paintObjects(x = nmask_watershed,
+                                                    tgt = Image_projection_numbers,
+                                                    col='#ff00ff')
   
   # Display the number of nuclei
   print(paste("Number of nuclei: ", nucNo, sep=""))
   
-  EBImage::writeImage(x = Image_stack_numbers,
+  EBImage::writeImage(x = Image_projection_numbers,
                       files = file.path(output_dir,
                                         paste(input_file_name,
                                               "_stack_cilia_all_numbers_nuclei.tif",
@@ -1294,12 +1461,12 @@ detectCilia <- function(input_dir_tif = NULL,
                       bits.per.sample = 8,
                       type = "tiff")
   
-  # Normalize image --------------------------------------------------------
+  # 5.6 Normalize and histogram equalized image ----------------------------
   
-  Image_stack_histogram_equalization_normalized <- EBImage::normalize(
-    Image_stack_histogram_equalization)
+  Image_projection_histogram_equalization_normalized <- EBImage::normalize(
+    Image_projection_histogram_equalization)
   
-  EBImage::writeImage(x = Image_stack_histogram_equalization_normalized,
+  EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                       files = file.path(output_dir,
                                         paste(input_file_name,
                                               "_stack_cilia_all_histogram_equalized_normalized.tif",
@@ -1308,8 +1475,8 @@ detectCilia <- function(input_dir_tif = NULL,
                       type = "tiff")
   
   
-  # Save function call and used parameter values ---------------------------
-
+  # 5.7 Save function call and used parameter values -----------------------
+  
   # Save all parameters in a csv
   
   # Original parameter
@@ -1317,10 +1484,10 @@ detectCilia <- function(input_dir_tif = NULL,
   function_call <- gsub(pattern = " +", replacement = " ", x = function_call)
   df_OriginalParameterList <- data.frame(
     "Original_function_call" = function_call)
-
+  
   # All parameter values
   parameter_names <- c("input_dir_tif", "input_file_czi", "cilium_color",
-                       "nucleus_color", "projection_method",
+                       "nucleus_color", "projection_method_for_threshold_calculation",
                        "threshold_by_density_of_cilium_pixels",
                        "threshold_find", "threshold_connect",
                        "vicinity_combine", "vicinity_connect",
@@ -1351,28 +1518,22 @@ detectCilia <- function(input_dir_tif = NULL,
   
   if(!is.null(df_parameterList)){
     readr::write_csv(df_parameterList,
-              file = file.path(output_dir, "parameter_list.csv"))
+                     file = file.path(output_dir, "parameter_list.csv"))
     
     readr::write_csv2(df_parameterList,
-               file = file.path(output_dir, "parameter_list_de.csv"))
+                      file = file.path(output_dir, "parameter_list_de.csv"))
   }
   
-  # Save the number of nuclei ----------------------------------------------
+  # 5.9 Save the number of nuclei ------------------------------------------
   df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
   if(!is.null(df_number_nuclei)){
     readr::write_csv(df_number_nuclei,
-              file = file.path(output_dir, "nuclei_number.csv"))
+                     file = file.path(output_dir, "nuclei_number.csv"))
     readr::write_csv2(df_number_nuclei,
-               file = file.path(output_dir, "nuclei_number_de.csv"))
+                      file = file.path(output_dir, "nuclei_number_de.csv"))
   }
   
-  
-  
-  # ---------------------------------------------------------------------- #
-  # ---------------------- 4. Cilia measurement -------------------------- #
-  # ---------------------------------------------------------------------- #
-  
-  # Save information of cilia ----------------------------------------------
+  # 5.10 Calculate and save length information of cilia --------------------
   
   # Get the length of the cilia
   df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
@@ -1382,10 +1543,10 @@ detectCilia <- function(input_dir_tif = NULL,
   
   if(!is.null(df_cilium_summary)){
     readr::write_csv(df_cilium_summary,
-              file = file.path(output_dir, "cilium_summary.csv"))
+                     file = file.path(output_dir, "cilium_summary.csv"))
     
     readr::write_csv2(df_cilium_summary,
-               file = file.path(output_dir, "cilium_summary_de.csv"))
+                      file = file.path(output_dir, "cilium_summary_de.csv"))
   }
   
   

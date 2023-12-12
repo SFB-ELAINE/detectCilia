@@ -12,14 +12,7 @@
 #' @param pixel_size A number (size of one pixel in micrometer)
 #' @param slice_distance A number (distance of two consecutive slices in
 #' z-direction in micrometer)
-#' @examples
-#' \dontrun{
-#' # Get the length of the cilia
-#' df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
-#'                                                0.219647,
-#'                                                0.20944)
-#' }
-#'
+#' @returns A tibble with summarized cilium information (lengths).
 
 summarizeCiliaInformation <- function(
   df_cilium_information = df_cilium_information,

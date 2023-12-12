@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 detectCilia.Rproj
-/inst/testscriptDevelop.R
+inst/testscriptDevelop.R
+output_compare/

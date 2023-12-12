@@ -2,9 +2,7 @@
 % Please edit documentation in R/detectCilia.R
 \name{detectCilia}
 \alias{detectCilia}
-\alias{ciliaDetect}
-\alias{detectcilia}
-\title{detectCilia}
+\title{Detect cilia in images}
 \usage{
 detectCilia(
   input_dir_tif = NULL,
@@ -12,8 +10,9 @@ detectCilia(
   output_dir = NULL,
   cilium_color = "red",
   nucleus_color = "blue",
-  projection_method = "mean",
+  projection_method_for_threshold_calculation = "max",
   threshold_by_density_of_cilium_pixels = TRUE,
+  use_histogram_equalization_for_threshold_calculation = FALSE,
   threshold_find = NULL,
   threshold_connect = NULL,
   vicinity_combine = NULL,
@@ -27,67 +26,90 @@ detectCilia(
 )
 }
 \arguments{
-\item{input_dir_tif}{A character (directory that contains z-stack slices
-in the tif format)}
+\item{input_dir_tif}{Path to a directory containing z-stack slices in TIF
+format as a string.}
 
-\item{input_file_czi}{A character (a file with the z-stack image as czi)}
+\item{input_file_czi}{Path to a CZI file with the z-stack image as a string.}
 
-\item{output_dir}{A character (directory where the results should be saved)}
+\item{output_dir}{Path to a directory where the results are to be saved
+as a string.}
 
-\item{cilium_color}{A character (color of the cilium staining)}
+\item{cilium_color}{Color of the cilium staining as a string or single
+character ("r", "red", "g", "green", "b", or "blue").}
 
-\item{nucleus_color}{A character (color of the nuclei staining)}
+\item{nucleus_color}{Color of the nuclei staining as a string or single
+character ("r", "red", "g", "green", "b", or "blue").}
 
-\item{projection_method}{A character (defines the method for the z projection:
-either "mean" or "max")}
+\item{projection_method_for_threshold_calculation}{Method as a string for
+calculating the z-stack projection which is used for calculating
+threshold to find cilia positions (either "mean" or "max").}
 
-\item{threshold_by_density_of_cilium_pixels}{A Boolean (disregard the
-threshold values if true and instead use a custom function to calculate
-the thresholds by looking at the density of cilium color pixels found in
-the image)}
+\item{threshold_by_density_of_cilium_pixels}{A Boolean.
+* `TRUE` (the default): Disregard the custom threshold values (if given)
+and, instead, use a function to calculate the binarization thresholds by
+looking at the density of cilium color pixels found in the entire image.
+* `FALSE`: Use custom threshold values.}
 
-\item{threshold_find}{A number (minimum intensity to find cilia)}
+\item{use_histogram_equalization_for_threshold_calculation}{A Boolean
+stating whether to use a histogram equalization algorithm for determining
+threshold values.}
 
-\item{threshold_connect}{A number (minimum intensity to connect to
-already detected cilium)}
+\item{threshold_find}{A number between 0 and 1 as the minimum
+intensity of possible cilia pixels in the z-stack projection.}
 
-\item{vicinity_combine}{A number (neighborhood to look for structures
-belonging to the same cilium (exclusion volume))}
+\item{threshold_connect}{A number between 0 and 1 (and usually
+lower than `threshold_find`) as the minimum intensity to find possible
+cilia pixels in every z-stack layer. Only those pixels are kept which
+are close to already found ciliary structures.}
 
-\item{vicinity_connect}{A number (neighborhood to look for pixels that
-belong to a given cilium (inclusion volume))}
+\item{vicinity_combine}{Number of pixels (integer) defining the
+neighborhood for combining found ciliary pixels in the z-stack
+projection to one cilium.}
 
-\item{min_cilium_area}{A number (gives the minimum area of a cilium to be
-detected)}
+\item{vicinity_connect}{Number of pixels (integer) defining the
+neighborhood for combining found ciliary pixels in every z-stack layer
+to one cilium.}
 
-\item{max_cilium_area}{A number (gives the maximum area of a cilium to be
-detected)}
+\item{min_cilium_area}{Minimum number of pixels (integer) a cilium should
+consist of.}
 
-\item{number_size_factor}{A number (factor for resizing the digit image)}
+\item{max_cilium_area}{Maximum number of pixels (integer) a cilium should
+consist of.}
 
-\item{pixel_size}{A number (size of one pixel in micrometer)}
+\item{number_size_factor}{A number for resizing the number image
+to be added.}
 
-\item{slice_distance}{A number (distance of two consecutive slices in
-z-direction in micrometer)}
+\item{pixel_size}{A number indicating the size (length and height) of one
+pixel in micrometers}
 
-\item{nuc_mask_width_height}{A number (width and height for detecting
-nuclei)}
+\item{slice_distance}{A number showing the distance of two consecutive
+z-stack layers in micrometers.}
+
+\item{nuc_mask_width_height}{Number of pixels (integer) for nuclei detection.}
+}
+\value{
+A list with the following content: 
+1) tibble `df_parameterlist` with information about used parameters,
+2) tibble `df_cilium_information`with information about found cilia,
+3) tibble `df_cilium_summary` with lengths of found cilia.
 }
 \description{
-Main function for detecting cilia in images
-}
-\details{
-Input should be czi (ideally) or tif-format.
-At first, the cilia will be located by using a projection method.
-Afterward the length of a cilium is determined in the horizontal plane.
-The height in the vertical plane is being determined by the number of
-z-slices where a cilium can be found.
-The entire length of the cilium is being calculated with c=sqrt(a^2+b^2).
+`detectCilia()` is the main function to detect cilia or similar small
+labelled objects in a CZI (ideally) or TIFF image. At first, the cilia
+will be located by using a projection method. Afterward, the length of
+a cilium is determined in the horizontal plane. The height in the
+vertical plane is being determined by the number of z-stack layers
+where a cilium is found. The entire length of the cilium is being
+calculated using Pythagoras' theorem (\code{c=sqrt(a^2+b^2)}).
 The output will be written in the current directory.
-Please be aware that the coordinate system is turned by 90° to the right.
-The origin of the x- and y-axes is in the upper-left corner of the image.
-(The x-axis points downwards and the y-axis to the right.)
+Please be aware that that the coordinate system is turned by 90° to the
+right. The origin of the x- and y-axes is in the upper-left corner of the
+image. (The x-axis points downwards and the y-axis to the right.)
 }
-\author{
-Kai Budde-Sagert
+\examples{
+# Detect all cilia (red structures) (and nuclei (blue structures)) in
+# a CZI image
+detectCilia(input_file_czi = input_file, output_dir = output_dir,
+cilium_color = "red", pixel_size = 0.219645, slice_distance = 0.31607,
+nuc_mask_width_height = 100) 
 }

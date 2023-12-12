@@ -7,27 +7,42 @@ cff-version: 1.2.0
 message: 'To cite package "detectCilia" in publications use:'
 type: software
 license: GPL-3.0-or-later
-title: 'detectCilia: Detecting the lengths of primary cilia'
+title: 'detectCilia: Detect and measure the lengths of primary cilia in microsopy
+  images'
 version: 0.7.2
-doi: NN
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
 authors:
 - family-names: Budde-Sagert
   given-names: Kai
   email: kai.budde-sagert@uni-rostock.de
-- name: c
-- family-names: c)
-  given-names: comment =
+  orcid: https://orcid.org/0000-0001-6836-9865
 preferred-citation:
-  type: article
+  type: manual
+  title: 'detectCilia: Detecting the lengths of primary cilia'
+  authors:
+  - family-names: Budde-Sagert
+    given-names: Kai
+    email: kai.budde-sagert@uni-rostock.de
+    orcid: https://orcid.org/0000-0001-6836-9865
+  year: '2023'
+  notes: R package version 0.7.3
+  url: https://github.com/SFB-ELAINE/detectCilia
+repository-code: https://github.com/SFB-ELAINE/detectCilia
+url: https://github.com/SFB-ELAINE/detectCilia
+contact:
+- family-names: Budde-Sagert
+  given-names: Kai
+  email: kai.budde-sagert@uni-rostock.de
+  orcid: https://orcid.org/0000-0001-6836-9865
+references:
+- type: article
   title: 'Studying the influence of cell culture medium composition on ciliary length
     with detectCilia: An R package for automated detection and length measurement
     of primary cilia'
   authors:
   - family-names: Budde-Sagert
     given-names: Kai
-    email: kai.budde-sagert@uni-rostock.de
   - family-names: Krueger
     given-names: Simone
   - family-names: Sehlke
@@ -40,21 +55,12 @@ preferred-citation:
     given-names: Rainer
   - family-names: Uhrmacher
     given-names: Adelinde M.
-  doi: NN
-  year: '2023'
-  publisher:
-    name: NN
+  journal: NN
   volume: '0'
   issue: '0'
-  journal: NN
+  year: '2023'
+  doi: NN
   start: '0'
-repository-code: https://github.com/SFB-ELAINE/detectCilia
-url: https://github.com/SFB-ELAINE/detectCilia
-contact:
-- family-names: Budde-Sagert
-  given-names: Kai
-  email: kai.budde-sagert@uni-rostock.de
-references:
 - type: software
   title: 'R: A Language and Environment for Statistical Computing'
   notes: Depends
@@ -128,12 +134,16 @@ references:
   version: '>= 2.0.3'
 - type: software
   title: readCzi
-  abstract: 'readCzi: Read czi image files, convert them to tifs, and save metadata'
+  abstract: 'readCzi: Read CZI image files, convert them to tifs, and save metadata'
   notes: Imports
+  url: https://github.com/SFB-ELAINE/readCzi
   authors:
-  - name: c)
+  - family-names: Budde-Sagert
+    given-names: Kai
+    email: kai.budde-sagert@uni-rostock.de
+    orcid: https://orcid.org/0000-0001-6836-9865
   year: '2023'
-  version: '>= 0.2.3'
+  version: '>= 0.3.0'
 - type: software
   title: readr
   abstract: 'readr: Read Rectangular Text Data'

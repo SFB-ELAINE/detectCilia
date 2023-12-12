@@ -12,6 +12,9 @@ getLayer(image = NULL, layer = NULL)
 
 \item{layer}{A character (color of the layer)}
 }
+\value{
+An array (specific channel of image).
+}
 \description{
 Get a specific layer of the image
 }

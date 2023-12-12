@@ -1,14 +1,21 @@
-bibentry(
-  "Article",
-  doi = "NN",
-  url = "NN",
+citHeader("To cite the detectCilia package in publications, please use:")
+
+bibentry(bibtype = "Manual",
+  title = "{detectCilia}: Detecting the lengths of primary cilia",
+  author = person("Kai", "Budde-Sagert"),
   year = 2023,
-  publisher = "NN",
+  note = "R package version 0.7.3",
+  url = "https://github.com/SFB-ELAINE/detectCilia"
+  )
+
+bibentry(
+  bibtype = "Article",
+  title = "Studying the influence of cell culture medium composition on ciliary length with detectCilia: An R package for automated detection and length measurement of primary cilia",
+  author = c(person("Kai", "Budde-Sagert"), person("Simone", "Krueger"), person("Clemens", "Sehlke"), person("Anika", "Jonitz-Heincke"), person("Robert", "David"), person("Rainer", "Bader"), person(c("Adelinde", "M."), "Uhrmacher")),
+  journal = "NN",
   volume = 00,
   number = 00,
   pages = 00,
-  key = "DetectCilia2023",
-  author = c(person("Kai", "Budde-Sagert"), person("Simone", "Krueger"), person("Clemens", "Sehlke"), person("Anika", "Jonitz-Heincke"), person("Robert", "David"), person("Rainer", "Bader"), person(c("Adelinde", "M."), "Uhrmacher")),
-  title = "Studying the influence of cell culture medium composition on ciliary length with detectCilia: An R package for automated detection and length measurement of primary cilia",
-  journal = "NN"
-)
+  year = 2023,
+  doi = "NN"
+  )

@@ -23,21 +23,15 @@ summarizeCiliaInformation(
 \item{slice_distance}{A number (distance of two consecutive slices in
 z-direction in micrometer)}
 }
+\value{
+A tibble with summarized cilium information (lengths).
+}
 \description{
 Summarizes the information of found cilia in images
 }
 \details{
 Input should be the result of detectCilia.R.
 The output is a data frame with the lengths of the found cilia.
-}
-\examples{
-\dontrun{
-# Get the length of the cilia
-df_cilium_summary <- summarizeCiliaInformation(df_cilium_information,
-                                               0.219647,
-                                               0.20944)
-}
-
 }
 \author{
 Kai Budde-Sagert

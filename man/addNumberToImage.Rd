@@ -2,12 +2,7 @@
 % Please edit documentation in R/addNumberToImage.R
 \name{addNumberToImage}
 \alias{addNumberToImage}
-\alias{addnumbertoimage}
-\alias{addNumbertoimage}
-\alias{addNumberToimage}
-\alias{addnumberToImage}
-\alias{addnumbertoImage}
-\title{addNumberToImage}
+\title{Add a number to an image layer}
 \usage{
 addNumberToImage(
   image = NULL,
@@ -19,24 +14,28 @@ addNumberToImage(
 )
 }
 \arguments{
-\item{image}{An three-dimensional array of numbers between 0 and 1}
+\item{image}{A numeric (three-dimensional) array of numbers between
+0 and 1.}
 
-\item{number}{A number (integer to be drawn/copied)}
+\item{number}{An integer that is to be added to the image.}
 
-\item{pos_x}{A number (x-value for starting pixel (upper left corner))}
+\item{pos_x, pos_y}{An integer giving the x- and y-values of the starting
+pixel (upper left corner).}
 
-\item{pos_y}{A number (y-value for starting pixel (upper left corner))}
+\item{number_size_factor}{A number for resizing the number image
+to be added.}
 
-\item{number_size_factor}{A number (factor for resizing the number)}
-
-\item{number_color}{A string (color of thr number to be drawn)}
+\item{number_color}{A string reflecting the color of the number to be
+added.}
+}
+\value{
+An array (image) with added number.
 }
 \description{
-Adds a number to the image layer
+`addNumberToImage()` adds an image of an integer to a x-y-3(rgb)-
+representation of an image.
 }
-\details{
-Adds an integer to a x-y-3(rgb)-representation of an image.
-}
-\author{
-Kai Budde-Sagert
+\examples{
+# Add a red number 5 to position 500,500 of a 1024, 1024 image called test_image
+addNumberToImage(test_image, 5, 500, 500)
 }
