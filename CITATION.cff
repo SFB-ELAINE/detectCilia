@@ -9,7 +9,7 @@ type: software
 license: GPL-3.0-or-later
 title: 'detectCilia: Detect and measure the lengths of primary cilia in microsopy
   images'
-version: 0.7.2
+version: 0.7.3
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
 authors:
@@ -73,6 +73,23 @@ references:
   institution:
     name: R Foundation for Statistical Computing
   version: '>= 4.0.0'
+- type: software
+  title: BiocManager
+  abstract: 'BiocManager: Access the Bioconductor Project Package Repository'
+  notes: Imports
+  url: https://bioconductor.github.io/BiocManager/
+  repository: https://CRAN.R-project.org/package=BiocManager
+  authors:
+  - family-names: Morgan
+    given-names: Martin
+    email: martin.morgan@roswellpark.org
+    orcid: https://orcid.org/0000-0002-5874-8148
+  - family-names: Ramos
+    given-names: Marcel
+    email: marcel.ramos@roswellpark.org
+    orcid: https://orcid.org/0000-0002-3242-0582
+  year: '2023'
+  version: '>= 1.30.19'
 - type: software
   title: dplyr
   abstract: 'dplyr: A Grammar of Data Manipulation'
