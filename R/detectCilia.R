@@ -353,10 +353,17 @@ detectCilia <- function(
   Image_nuclei <- getLayer(image = Image_projection_max, layer = nucleus_color)
   
   # Smooth the image
-  Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = 5)
+  filterSize <- floor(5^(0.22/pixel_size))
+  Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = filterSize)
+  # Image_nuclei <- EBImage::clahe(Image_nuclei)
   
   # Make the image brighter for detection
-  Image_nuclei <- 10*Image_nuclei
+  if(mean(Image_nuclei) < 0.05){
+    Image_nuclei <- 10*Image_nuclei
+  }else{
+    Image_nuclei <- 5*Image_nuclei
+  }
+  
   
   #display(Image_nuclei)
   #display(Image_nuclei, method = "raster", all = TRUE)
@@ -365,11 +372,13 @@ detectCilia <- function(
   nmask <- EBImage::thresh(x = Image_nuclei,
                            w = nuc_mask_width_height,
                            h = nuc_mask_width_height,
-                           offset = 0.05)
+                           offset = 0.1)
+  # display(nmask)
   
   # Morphological opening to remove objects smaller than the structuring element
   # (disc of size 13)
-  nmask <- EBImage::opening(nmask, EBImage::makeBrush(13, shape='disc'))
+  discSize <- floor(10*(0.22/pixel_size))
+  nmask <- EBImage::opening(nmask, EBImage::makeBrush(discSize, shape='disc'))
   # Fill holes
   nmask <- EBImage::fillHull(nmask)
   # Label each connected set of pixels with a distinct ID
@@ -409,10 +418,32 @@ detectCilia <- function(
   nmask <-  EBImage::watershed(EBImage::distmap(nmask), 1)
   
   table_nmask <- table(nmask)
-  nuc_min_area <- 0.1*median(table_nmask[-1])
+  nuc_min_area_median  <- 0.1*median(table_nmask[-1])
+  nuc_min_area_mean    <- 0.1*mean(table_nmask[-1])
+  
+  if(nuc_min_area_mean > 2*nuc_min_area_median){
+    nuc_min_area <- 0.5 * (nuc_min_area_mean + nuc_min_area_median)
+    print("Use combination of mean and median nucleus area for defining minimum nucleus size.")
+  }else{
+    nuc_min_area <- nuc_min_area_median
+  }
+  
+  nuc_max_area_median <- 10 * median(table_nmask[-1])
+  nuc_max_area_mean   <- 10 * mean(table_nmask[-1])
+  
+  if(nuc_max_area_mean > 2*nuc_max_area_median){
+    nuc_max_area <- 0.5 * (nuc_max_area_mean + nuc_max_area_median)
+    print("Use combination of mean and median nucleus area for defining maximum nucleus size.")
+  }else{
+    nuc_max_area <- nuc_max_area_median
+  }
   
   # remove objects that are smaller than min_nuc_size
-  to_be_removed <- as.integer(names(which(table_nmask < nuc_min_area)))
+  to_be_removed <- c(as.integer(names(which(table_nmask < nuc_min_area))),
+                     as.integer(names(which(table_nmask > nuc_max_area))))
+  to_be_removed <- sort(to_be_removed)
+  to_be_removed <- to_be_removed[!(to_be_removed == 0)]
+  
   if(length(to_be_removed) > 0){
     for(i in 1:length(to_be_removed)){
       EBImage::imageData(nmask)[EBImage::imageData(nmask) == to_be_removed[i]] <- 0
