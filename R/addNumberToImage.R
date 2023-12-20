@@ -66,12 +66,12 @@ addNumberToImage <- function(image = NULL,
       
       
       if(is.null(number_size_factor)){
-        # Resizing factor for priting numbers if not given
-        # The height should be 14px
+        # Resizing factor for printing numbers if not given
+        # The height should be 14px (in a 1024x1024 image)
         
         
-        # height of the image (number of rowss)
-        number_size_factor <- 14 / dim(digit_image)[2]
+        # height of the image (number of rows (y))
+        number_size_factor <- 14 / dim(digit_image)[2] * dim(image)[2] / 1024
       }
       
       # if(is.null(number_size_factor)){
