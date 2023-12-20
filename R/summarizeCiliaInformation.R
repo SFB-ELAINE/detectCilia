@@ -22,7 +22,8 @@ summarizeCiliaInformation <- function(
 
   number_of_cilia <- unique(df_cilium_information$ciliumNumber)
 
-  df_cilium_summary <- data.frame("cilium" = sort(number_of_cilia),
+  df_cilium_summary <- data.frame(cilium = sort(number_of_cilia),
+                                  cilium_shape = NA,
                                   vertical_length_in_um = NA,
                                   vertical_length_in_layers = NA,
                                   horizontal_length_in_um = NA,
@@ -34,16 +35,26 @@ summarizeCiliaInformation <- function(
 
     df_cilium_projection <- df_cilium_information[
       df_cilium_information$ciliumNumber == i,]
+    
+    cilium_shape <- df_cilium_projection$cilium_shape[1]
     # height of cilium (projection in vertical direction)
     
     layers_larger_than_min_size <- unique(df_cilium_projection$layer[df_cilium_projection$layer > 0])[
       as.logical(table(df_cilium_projection$layer[df_cilium_projection$layer > 0]) > min_cilium_area)] #in pixels
     
-    lower_layer <- min(layers_larger_than_min_size)
-    upper_layer <- max(layers_larger_than_min_size)
+    if(length(layers_larger_than_min_size) > 0){
+      lower_layer <- min(layers_larger_than_min_size)
+      upper_layer <- max(layers_larger_than_min_size)
+      
+      vertical_length_in_layers <- upper_layer-lower_layer + 1 # in z stack layers
+      vertical_length_in_um <- (upper_layer - lower_layer + 1) * slice_distance # in \mu m
+    }else{
+      vertical_length_in_layers <- NA
+      vertical_length_in_um     <- NA
+    }
+    
 
-    vertical_length_in_layers <- upper_layer-lower_layer + 1 # in z stack layers
-    vertical_length_in_um <- (upper_layer - lower_layer + 1) * slice_distance # in \mu m
+    
 
     # Find pixels of z-projection ##
     # Only keep non-duplicated columns pos_x and pos_y (all unique positions)
@@ -93,15 +104,21 @@ summarizeCiliaInformation <- function(
     # Total length of the cilium
     total_length_in_um <- sqrt(horizontal_length_in_um*horizontal_length_in_um + vertical_length_in_um*vertical_length_in_um)
     
+    df_cilium_summary$cilium_shape[df_cilium_summary$cilium == i] <- cilium_shape
     df_cilium_summary$vertical_length_in_um[df_cilium_summary$cilium == i] <- vertical_length_in_um
     df_cilium_summary$vertical_length_in_layers[df_cilium_summary$cilium == i] <- vertical_length_in_layers
     df_cilium_summary$horizontal_length_in_um[df_cilium_summary$cilium == i] <- horizontal_length_in_um
     df_cilium_summary$horizontal_length_in_pixels[df_cilium_summary$cilium == i] <- horizontal_length_in_pixels
     df_cilium_summary$total_length_in_um[df_cilium_summary$cilium == i] <- total_length_in_um
-
-
   }
-
+  
+  number_of_digits <- floor(sqrt(min_cilium_area))
+  
+  df_cilium_summary$vertical_length_in_um   <- round(x = df_cilium_summary$vertical_length_in_um, digits = number_of_digits)
+  df_cilium_summary$horizontal_length_in_um <- round(x = df_cilium_summary$horizontal_length_in_um, digits = number_of_digits)
+  df_cilium_summary$horizontal_length_in_pixels <- round(x = df_cilium_summary$horizontal_length_in_pixels, digits = 1)
+  df_cilium_summary$total_length_in_um      <- round(x = df_cilium_summary$total_length_in_um, digits = number_of_digits)
+  
   return(df_cilium_summary)
 
 }

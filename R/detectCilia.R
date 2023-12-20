@@ -282,18 +282,20 @@ detectCilia <- function(
   
   # Determine the vicinity to combine cilium points during the first search
   # (finding phase):
-  # Use twice the distance assuming a large cilium being a square
+  # Use half of square root of large cilium area as max distance to combine
+  # two cilium points
   if(is.null(vicinity_combine)){
     # Radius of a large cilium
-    vicinity_combine <- ceiling(x = 2*sqrt(max_cilium_area))
+    vicinity_combine <- ceiling(0.5 * sqrt(max_cilium_area))
   }
   
   # Determine the vicinity to connect cilium points during connecting phase
   # (a newly found point may not be further away than this many points
   # from an existing cilium):
-  # Use twice the distance assuming a small cilium being a square
+  # Use half of square root of a small cilium area as max distance to combine
+  # two cilium points
   if(is.null(vicinity_connect)){
-    vicinity_connect <- floor(x = 2*sqrt(min_cilium_area))
+    vicinity_connect <- floor(0.5 + sqrt(min_cilium_area))
   }
   
   # Determine the nuclei mask area
@@ -347,21 +349,24 @@ detectCilia <- function(
   # ---------------------------------------------------------------------- #
   
   # 2. Nuclei detection ----------------------------------------------------
-  # 2.1 Find and count all nuclei using the max projection -----------------
+  #    Find and count all nuclei using the max projection
   
   # Save only color layer of nuclei
   Image_nuclei <- getLayer(image = Image_projection_max, layer = nucleus_color)
+  Image_nuclei <- EBImage::clahe(x = Image_nuclei, nx = 8)
   
   # Smooth the image
-  filterSize <- floor(5^(0.22/pixel_size))
+  filterSize <- floor(5*(0.22/pixel_size))
   Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = filterSize)
-  # Image_nuclei <- EBImage::clahe(Image_nuclei)
   
+  print(paste0("mean(Image_nuclei): ", mean(Image_nuclei)))
   # Make the image brighter for detection
   if(mean(Image_nuclei) < 0.05){
     Image_nuclei <- 10*Image_nuclei
-  }else{
+  }else if(mean(Image_nuclei) < 0.1){
     Image_nuclei <- 5*Image_nuclei
+  }else{
+    Image_nuclei <- 2*Image_nuclei
   }
   
   
@@ -372,12 +377,12 @@ detectCilia <- function(
   nmask <- EBImage::thresh(x = Image_nuclei,
                            w = nuc_mask_width_height,
                            h = nuc_mask_width_height,
-                           offset = 0.1)
+                           offset = 0.05)
   # display(nmask)
   
   # Morphological opening to remove objects smaller than the structuring element
   # (disc of size 13)
-  discSize <- floor(10*(0.22/pixel_size))
+  discSize <- floor(13*(0.22/pixel_size))
   nmask <- EBImage::opening(nmask, EBImage::makeBrush(discSize, shape='disc'))
   # Fill holes
   nmask <- EBImage::fillHull(nmask)
@@ -421,7 +426,7 @@ detectCilia <- function(
   nuc_min_area_median  <- 0.1*median(table_nmask[-1])
   nuc_min_area_mean    <- 0.1*mean(table_nmask[-1])
   
-  if(nuc_min_area_mean > 2*nuc_min_area_median){
+  if(nuc_min_area_mean > (2*nuc_min_area_median) ){
     nuc_min_area <- 0.5 * (nuc_min_area_mean + nuc_min_area_median)
     print("Use combination of mean and median nucleus area for defining minimum nucleus size.")
   }else{
@@ -431,7 +436,7 @@ detectCilia <- function(
   nuc_max_area_median <- 10 * median(table_nmask[-1])
   nuc_max_area_mean   <- 10 * mean(table_nmask[-1])
   
-  if(nuc_max_area_mean > 2*nuc_max_area_median){
+  if(nuc_max_area_mean > (2*nuc_max_area_median) ){
     nuc_max_area <- 0.5 * (nuc_max_area_mean + nuc_max_area_median)
     print("Use combination of mean and median nucleus area for defining maximum nucleus size.")
   }else{
@@ -679,7 +684,7 @@ detectCilia <- function(
   # }
   # rm(i)
   
-  neighborhood <- 1
+  neighborhood <- vicinity_combine
   for(jx in -neighborhood:neighborhood){
     for(jy in -neighborhood:neighborhood){
       if(!(jx == 0 && jy == 0)){
@@ -738,16 +743,15 @@ detectCilia <- function(
       ciliumNumber <- ciliumNumber_dummy[!(ciliumNumber_dummy == 0)]
     }
     
-    if(length(ciliumNumber) > 1)
-    {
-      print("The following cilia are now one:")
-      print(ciliumNumber)
+    if(length(ciliumNumber) > 1){
+      print(paste0("The following cilia are now one: ",
+                   paste0(ciliumNumber, collapse = ", ")))
       for(j in 2:length(ciliumNumber)){
         df_cilium_points$ciliumNumber[
           df_cilium_points$ciliumNumber == ciliumNumber[j]] <-
           ciliumNumber[1]
       }
-      
+      rm(j)
     }else{
       df_cilium_points$ciliumNumber[.distance == 0] <- ciliumNumber
     }
@@ -755,7 +759,7 @@ detectCilia <- function(
     # Advance i to the next row which contains 0 as the cilium number
     i <- which(df_cilium_points$ciliumNumber==0)[1]
   }
-  rm(i)
+  rm(list = c("i", "ciliumNumber"))
   
   
   # Delete all ciliary pixels that are not bright enough
@@ -773,7 +777,7 @@ detectCilia <- function(
     
     df_cilium_points$possibleCilium[df_cilium_points$ciliumNumber == i] <- keep_pixels
   }
-  rm(i)
+  rm(list = c("i", "indices", "cilium_intensities", "lower_limit", "keep_pixels"))
   
   df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
   
@@ -799,11 +803,6 @@ detectCilia <- function(
   
   # Delete all structures that are too small or too big
   df_cilium_points <- df_cilium_points[df_cilium_points$possibleCilium,]
-  
-  # Mark all structure that are not "well connected" (too many holes in between)
-  # TODO: Look for structures having pixels not connected to the rest
-  # (not necessary right now)
-  
   
   # Delete all cilia touching a border of the image
   # (including one pixel in between)
@@ -851,85 +850,175 @@ detectCilia <- function(
   indices <- cbind(df_cilium_points$pos_x, df_cilium_points$pos_y)
   df_cilium_points$fluorescence_intensity <- Image_cilia_layer_find[indices]
   
+  df_cilium_points$ClusterNumber <- 0
+  # df_cilium_points$ClusterChecked <- FALSE
+  # # Sort cilia
+  # df_cilium_points <- df_cilium_points %>% 
+  #   dplyr::arrange(ciliumNumber, pos_x, pos_y)
+  
   for(i in unique(df_cilium_points$ciliumNumber)){
-    
+    # print(i)
     df_dummy <- df_cilium_points[df_cilium_points$ciliumNumber == i,]
     
-    #Find cluster number
-    df_dummy$ClusterNumber <- 0
     df_dummy$ClusterNumber[1] <- 1
     
-    
-    # Start with the second entry in the data frame
-    j <- 2
-    while(!is.na(which(df_dummy$ClusterNumber==0)[1])){
-      
-      # Calculate Distance of current pixel to all other pixel that might
-      # be a cluster of that cilium
-      .pos_x_distance <- df_dummy$pos_x[j] -
-        df_dummy$pos_x
-      
-      .pos_y_distance <- df_dummy$pos_y[j] -
-        df_dummy$pos_y
-      
-      .pos_x_distance[abs(.pos_x_distance) <= vicinity_connect] <- 0
-      .pos_y_distance[abs(.pos_y_distance) <= vicinity_connect] <- 0
-      
-      .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
-      
-      # Get the cluster number (close cilium that has been detected)
-      ClusterNumber_dummy <-
-        unique(df_dummy$ClusterNumber[.distance == 0])
-      
-      if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
-        # Advance cluster number number because there is no Cilium close by
-        ClusterNumber <- max(df_dummy$ClusterNumber) + 1
-      }else{
-        # Points belong to already existing cluster
-        ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
-      }
-      
-      if(length(ClusterNumber) > 1){
-        print("The following clusters are now one:")
-        print(ClusterNumber)
-        print("of the cilium number:")
-        print(i)
-        for(j in 2:length(ClusterNumber)){
-          df_dummy$ClusterNumber[
-            df_dummy$ClusterNumber == ClusterNumber[j]] <-
-            ClusterNumber[1]
+    if(length(df_dummy$ClusterNumber) > 1){
+      j <- 2
+      while(0 %in% df_dummy$ClusterNumber){
+        
+        .pos_x_distance <- df_dummy$pos_x[j] -
+          df_dummy$pos_x
+        
+        .pos_y_distance <- df_dummy$pos_y[j] -
+          df_dummy$pos_y
+        
+        .pos_x_distance[abs(.pos_x_distance) <= vicinity_connect] <- 0
+        .pos_y_distance[abs(.pos_y_distance) <= vicinity_connect] <- 0
+        
+        .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+        
+        # Get the cluster number (close cilium that has been detected)
+        ClusterNumber_dummy <-
+          unique(df_dummy$ClusterNumber[.distance == 0])
+        
+        if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
+          # Advance cluster number number because there is no cluster close by
+          ClusterNumber <- max(df_dummy$ClusterNumber) + 1
+        }else{
+          # Points belong to already existing cluster
+          ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
         }
         
-      }else{
-        df_dummy$ClusterNumber[.distance == 0] <- ClusterNumber
+        if(length(ClusterNumber) > 1){
+          print(paste0("The following clusters of cilium ", i,
+                       " are now one: ", paste0(ClusterNumber, collapse = ", ")))
+          for(k in 2:length(ClusterNumber)){
+            df_dummy$ClusterNumber[
+              df_dummy$ClusterNumber == ClusterNumber[k]] <-
+              ClusterNumber[1]
+          }
+          rm(k)
+          
+        }else{
+          df_dummy$ClusterNumber[df_dummy$ClusterNumber == 0 & .distance == 0] <- ClusterNumber
+        }
+        
+        j <- j+1
+      }
+      rm(list = c("j", "ClusterNumber"))
+      
+      df_test <- df_dummy %>% 
+        dplyr::group_by(ClusterNumber) %>%
+        dplyr::summarise(meanIntensity = mean(.data$fluorescence_intensity),
+                         clusterSize = length(.data$fluorescence_intensity))
+      
+      # Remove all clusters that are too small
+      df_test <- df_test[!(df_test$clusterSize < min_cilium_area),]
+      
+      cluster_number_with_heighest_mean_intensity <- df_test$ClusterNumber[
+        df_test$meanIntensity == max(df_test$meanIntensity)]
+      
+      if(length(cluster_number_with_heighest_mean_intensity)>1){
+        print("Please check the determination of the cluster number.")
       }
       
-      # Advance i to the next row which contains 0 as the cilium number
-      j <- which(df_dummy$ClusterNumber==0)[1]
-    }
-    rm(j)
-    
-    df_test <- df_dummy %>% 
-      dplyr::group_by(ClusterNumber) %>% 
-      dplyr::summarise(meanIntensity = mean(.data$fluorescence_intensity))
-    
-    df_dummy$disconnectedPart[
-      df_dummy$ClusterNumber != df_test$ClusterNumber[
-        which(df_test$meanIntensity == max(df_test$meanIntensity))]] <- TRUE
-    
-    df_dummy <- df_dummy[!df_dummy$disconnectedPart,]
-    df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
-    
-    # Keep only rows that have been found
-    if(i == unique(df_cilium_points$ciliumNumber)[1]){
-      df_cilium_points2 <- df_dummy
-    }else{
-      df_cilium_points2 <- rbind(df_cilium_points2, df_dummy)
+      df_dummy$disconnectedPart[
+        df_dummy$ClusterNumber != cluster_number_with_heighest_mean_intensity] <- TRUE
+      
+      df_dummy <- df_dummy[!df_dummy$disconnectedPart,]
+      df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
+      
+      # Keep only rows that have been found
+      if(i == unique(df_cilium_points$ciliumNumber)[1]){
+        df_cilium_points2 <- df_dummy
+      }else{
+        df_cilium_points2 <- rbind(df_cilium_points2, df_dummy)
+      }
+      
     }
     
-    # df_cilium_points <- rbind(df_cilium_points, df_dummy)
   }
   rm(list = c("i", "df_test", "df_dummy"))
+  
+  # for(i in unique(df_cilium_points$ciliumNumber)){
+  #   
+  #   df_dummy <- df_cilium_points[df_cilium_points$ciliumNumber == i,]
+  #   
+  #   #Find cluster number
+  #   df_dummy$ClusterNumber <- 0
+  #   df_dummy$ClusterNumber[1] <- 1
+  #   
+  #   
+  #   # Start with the second entry in the data frame
+  #   j <- 2
+  #   while(!is.na(which(df_dummy$ClusterNumber==0)[1])){
+  #     
+  #     # Calculate Distance of current pixel to all other pixel that might
+  #     # be a cluster of that cilium
+  #     .pos_x_distance <- df_dummy$pos_x[j] -
+  #       df_dummy$pos_x
+  #     
+  #     .pos_y_distance <- df_dummy$pos_y[j] -
+  #       df_dummy$pos_y
+  #     
+  #     .pos_x_distance[abs(.pos_x_distance) <= vicinity_connect] <- 0
+  #     .pos_y_distance[abs(.pos_y_distance) <= vicinity_connect] <- 0
+  #     
+  #     .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+  #     
+  #     # Get the cluster number (close cilium that has been detected)
+  #     ClusterNumber_dummy <-
+  #       unique(df_dummy$ClusterNumber[.distance == 0])
+  #     
+  #     if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
+  #       # Advance cluster number number because there is no cluster close by
+  #       ClusterNumber <- max(df_dummy$ClusterNumber) + 1
+  #     }else{
+  #       # Points belong to already existing cluster
+  #       ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
+  #     }
+  #     
+  #     if(length(ClusterNumber) > 1){
+  #       print("The following clusters are now one:")
+  #       print(ClusterNumber)
+  #       print("of the cilium number:")
+  #       print(i)
+  #       for(j in 2:length(ClusterNumber)){
+  #         df_dummy$ClusterNumber[
+  #           df_dummy$ClusterNumber == ClusterNumber[j]] <-
+  #           ClusterNumber[1]
+  #       }
+  #       
+  #     }else{
+  #       df_dummy$ClusterNumber[.distance == 0] <- ClusterNumber
+  #     }
+  #     
+  #     # Advance i to the next row which contains 0 as the cluster number
+  #     j <- which(df_dummy$ClusterNumber==0)[1]
+  #   }
+  #   rm(j)
+  #   
+  #   df_test <- df_dummy %>% 
+  #     dplyr::group_by(ClusterNumber) %>% 
+  #     dplyr::summarise(meanIntensity = mean(.data$fluorescence_intensity))
+  #   
+  #   df_dummy$disconnectedPart[
+  #     df_dummy$ClusterNumber != df_test$ClusterNumber[
+  #       which(df_test$meanIntensity == max(df_test$meanIntensity))]] <- TRUE
+  #   
+  #   df_dummy <- df_dummy[!df_dummy$disconnectedPart,]
+  #   df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
+  #   
+  #   # Keep only rows that have been found
+  #   if(i == unique(df_cilium_points$ciliumNumber)[1]){
+  #     df_cilium_points2 <- df_dummy
+  #   }else{
+  #     df_cilium_points2 <- rbind(df_cilium_points2, df_dummy)
+  #   }
+  #   
+  #   # df_cilium_points <- rbind(df_cilium_points, df_dummy)
+  # }
+  # rm(list = c("i", "df_test", "df_dummy"))
   
   # Delete old cilium point tibble
   df_cilium_points <- df_cilium_points2
@@ -1060,24 +1149,6 @@ detectCilia <- function(
     df_cilium_points[,!names(df_cilium_points)=="possibleCilium"]
   
   
-  # Save image with labelled cilia
-  Image_projection_cilia <- Image_projection
-  
-  for(k in 1:length(df_cilium_points$pos_x)){
-    Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 1] <- 1
-    Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 2] <- 1
-  }
-  
-  EBImage::writeImage(x = Image_projection_cilia,
-                      files = file.path(output_dir,
-                                        paste(input_file_name,
-                                              "_stack_cilia_unconnected.tif",
-                                              sep = "")),
-                      bits.per.sample = 8,
-                      type = "tiff")
-  
-  
-  
   # ---------------------------------------------------------------------- #
   # -------------- 4. Cilia detection in z-stack layers ------------------ #
   # ---------------------------------------------------------------------- #
@@ -1121,7 +1192,7 @@ detectCilia <- function(
                 Sys.time(), ".)", sep=""))
     
     
-    # Save Image for every layer 
+    # Get image of every layer 
     Image <-  image_data[,,,i]
     
     Image_cilia_layer <- getLayer(image = Image, layer = cilium_color)
@@ -1303,22 +1374,14 @@ detectCilia <- function(
             
             # Save image with labelled cilia
             # print(paste0("TODO: 5 ", Sys.time()))
-            for(k in 1:length(df_cilium_points_connect$pos_x)){
-              Image[df_cilium_points_connect$pos_x[k],
-                    df_cilium_points_connect$pos_y[k], 1] <- 1
-              Image[df_cilium_points_connect$pos_x[k],
-                    df_cilium_points_connect$pos_y[k], 2] <- 1
-            }
             
-            Image <- EBImage::Image(data = Image, colormode = "color")
-            EBImage::writeImage(x = Image,
-                                files = file.path(output_dir,
-                                                  paste(input_file_name,
-                                                        "_cilia_layer_",
-                                                        i, ".tif",
-                                                        sep = "")),
-                                bits.per.sample = 8,
-                                type = "tiff")
+            # for(k in 1:length(df_cilium_points_connect$pos_x)){
+            #   Image[df_cilium_points_connect$pos_x[k],
+            #         df_cilium_points_connect$pos_y[k], 1] <- 1
+            #   Image[df_cilium_points_connect$pos_x[k],
+            #         df_cilium_points_connect$pos_y[k], 2] <- 1
+            # }
+            
           }
         }
       }
@@ -1328,13 +1391,7 @@ detectCilia <- function(
   rm(list = c("i", "Image", "Image_cilia_layer"))
   
   
-  
-  # ---------------------------------------------------------------------- #
-  # -------------------------- 5. Save results --------------------------- #
-  # ---------------------------------------------------------------------- #
-  
-  # 5. Save results --------------------------------------------------------
-  # 5.1 Save a data frame with all cilia information -----------------------
+  # Check if no connected cilium is larger than max cilium area ------------
   
   # Save all locations of all cilia (independent from the z layer where it
   # was found being found)
@@ -1353,8 +1410,150 @@ detectCilia <- function(
   
   row.names(df_cilium_all) <- NULL
   
+  df_cilium_size <- df_cilium_all %>%
+    dplyr::group_by(ciliumNumber ) %>%
+    dplyr::summarise(ciliumSize = length(.data$pos_x))
+  
+  cilium_numbers_to_be_removed <- df_cilium_size$ciliumNumber[df_cilium_size$ciliumSize > max_cilium_area]
+  
+  if(length(cilium_numbers_to_be_removed) > 0){
+    df_cilium_all <- df_cilium_all[!df_cilium_all$ciliumNumber %in% cilium_numbers_to_be_removed,]
+    df_cilium_information <- df_cilium_information[!df_cilium_information$ciliumNumber %in% cilium_numbers_to_be_removed,]
+  }
+  
+  
+  # Renumber cilia
+  .number <- 1
+  df_cilium_information$ciliumNumber_NEW <- NA
+  for(i in unique(df_cilium_information$ciliumNumber)){
+    df_cilium_information$ciliumNumber_NEW[df_cilium_information$ciliumNumber == i] <-
+      .number
+    df_cilium_all$ciliumNumber_NEW[df_cilium_all$ciliumNumber == i] <-
+      .number
+    .number <- .number + 1
+  }
+  rm(list = c("i", ".number"))
+  
+  df_cilium_information <- dplyr::select(df_cilium_information, -ciliumNumber)
+  names(df_cilium_information)[names(df_cilium_information) == "ciliumNumber_NEW"] <- "ciliumNumber"
+  
+  df_cilium_all <- dplyr::select(df_cilium_all, -ciliumNumber)
+  names(df_cilium_all)[names(df_cilium_all) == "ciliumNumber_NEW"] <- "ciliumNumber"
+  
+  # Save found cilia in every z-stack layer
+  
+  for(i in unique(df_cilium_information$layer[df_cilium_information$layer>0])){
+    coordinates_layer1 <- matrix(data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+                                          df_cilium_information$pos_y[df_cilium_information$layer == i],
+                                          rep(1, length(df_cilium_information$pos_x[df_cilium_information$layer == i]))),
+                                 ncol = 3)
+    coordinates_layer2 <- matrix(data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+                                          df_cilium_information$pos_y[df_cilium_information$layer == i],
+                                          rep(2, length(df_cilium_information$pos_x[df_cilium_information$layer == i]))), ncol = 3)
+    
+    Image <-  image_data[,,,i]
+    
+    Image[coordinates_layer1] <- 1
+    Image[coordinates_layer2] <- 1
+    
+    Image <- EBImage::Image(data = Image, colormode = "color")
+    EBImage::writeImage(x = Image,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_cilia_layer_",
+                                                i, ".tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
+  rm(i)
+  
+  
+  rm(list = c("coordinates_layer1", "coordinates_layer2"))
+  
+  # Save unconnected cilia image (from projection but after this cleaning step)
+  
+  # Save image with labelled cilia
+  Image_projection_cilia <- Image_projection
+  
+  # for(k in 1:length(df_cilium_points$pos_x)){
+  #   Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 1] <- 1
+  #   Image_projection_cilia[df_cilium_points$pos_x[k], df_cilium_points$pos_y[k], 2] <- 1
+  # }
+  
+  coordinates_layer1 <- matrix(data = c(df_cilium_information$pos_x[df_cilium_information$layer == -1],
+                                        df_cilium_information$pos_y[df_cilium_information$layer == -1],
+                                        rep(1, length(df_cilium_information$pos_x[df_cilium_information$layer == -1]))),
+                               ncol = 3)
+  coordinates_layer2 <- matrix(data = c(df_cilium_information$pos_x[df_cilium_information$layer == -1],
+                                        df_cilium_information$pos_y[df_cilium_information$layer == -1],
+                                        rep(2, length(df_cilium_information$pos_x[df_cilium_information$layer == -1]))), ncol = 3)
+  
+  Image_projection_cilia[coordinates_layer1] <- 1
+  Image_projection_cilia[coordinates_layer2] <- 1
+  
+  rm(list = c("coordinates_layer1", "coordinates_layer2"))
+  
+  EBImage::writeImage(x = Image_projection_cilia,
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_unconnected.tif",
+                                              sep = "")),
+                      bits.per.sample = 8,
+                      type = "tiff")
+ 
+  # ---------------------------------------------------------------------- #
+  # -------------------------- 5. Save results --------------------------- #
+  # ---------------------------------------------------------------------- #
+  
+  # 5. Save results --------------------------------------------------------
+  # 5.1 Save a data frame with all cilia information -----------------------
+  
   # Add information of all cilium coordinates as layer -99 to data frame
+  # (Layer = -1 is from the projection)
   df_cilium_information <- rbind(df_cilium_information, df_cilium_all)
+  
+  # 5.2 Check if shape is cilium-like --------------------------------------
+  df_cilium_information$cilium_shape <- FALSE
+  
+  for(i in unique(df_cilium_information$ciliumNumber)){
+    x_max <- max(df_cilium_information$pos_x[df_cilium_information$ciliumNumber == i])
+    x_min <- min(df_cilium_information$pos_x[df_cilium_information$ciliumNumber == i])
+    
+    y_max <- max(df_cilium_information$pos_y[df_cilium_information$ciliumNumber == i])
+    y_min <- min(df_cilium_information$pos_y[df_cilium_information$ciliumNumber == i])
+    
+    # Calculate fill ratio
+    number_of_cilium_pixels <- sum(df_cilium_information$layer[df_cilium_information$ciliumNumber == i] == -99)
+    number_of_pixels_of_surrounding_rectangle <- abs((x_max-x_min+1)*(y_max-y_min+1))
+    fill_ratio <- number_of_cilium_pixels/number_of_pixels_of_surrounding_rectangle
+    
+    if(fill_ratio < 0.8){
+      df_cilium_information$cilium_shape[df_cilium_information$ciliumNumber == i] <- TRUE
+    }else{
+      # Calculate aspect ratio
+      aspect_ratio <- abs((x_max-x_min+1)/(y_max-y_min+1))
+      aspect_ratio <- ifelse(test = aspect_ratio < 1, yes = 1/aspect_ratio, no = aspect_ratio)
+      if(aspect_ratio > 3/2){
+        df_cilium_information$cilium_shape[df_cilium_information$ciliumNumber == i] <- TRUE
+      }
+    }
+  }
+  rm(i)
+  
+  # # Renumber cilia
+  # .number <- 1
+  # df_cilium_information$ciliumNumber_NEW <- NA
+  # for(i in unique(df_cilium_information$ciliumNumber[df_cilium_information$cilium_shape == TRUE])){
+  #   df_cilium_information$ciliumNumber_NEW[
+  #     df_cilium_information$ciliumNumber == i] <-
+  #     .number
+  #   .number <- .number + 1
+  # }
+  # rm(list = c("i", ".number"))
+  # 
+  # df_cilium_information <- dplyr::select(df_cilium_information, -ciliumNumber)
+  # names(df_cilium_information)[names(df_cilium_information) == "ciliumNumber_NEW"] <- "ciliumNumber"
   
   # 5.2 Save the projection image with cilium information ------------------
   
@@ -1367,11 +1566,41 @@ detectCilia <- function(
     Image_projection_cilia_connected <- Image_projection_mean
   }
   
-  for(k in 1:length(df_cilium_all$pos_x)){
-    Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
-    Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 2] <- 1
-  }
-  rm(k)
+  # for(k in 1:length(df_cilium_all$pos_x)){
+  #   Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 1] <- 1
+  #   Image_projection_cilia_connected[df_cilium_all$pos_x[k], df_cilium_all$pos_y[k], 2] <- 1
+  # }
+  # rm(k)
+  
+  # TRUE ciliary objects
+  Image_projection_cilia_connected_copy <- Image_projection_cilia_connected
+  df_cilium_all_cilia <- df_cilium_information[df_cilium_information$layer == -99 & df_cilium_information$cilium_shape,]
+  coordinates_layer1 <- matrix(data = c(df_cilium_all_cilia$pos_x, df_cilium_all_cilia$pos_y, rep(1, length(df_cilium_all_cilia$pos_x))), ncol = 3)
+  coordinates_layer2 <- matrix(data = c(df_cilium_all_cilia$pos_x, df_cilium_all_cilia$pos_y, rep(2, length(df_cilium_all_cilia$pos_x))), ncol = 3)
+  
+  Image_projection_cilia_connected[coordinates_layer1] <- 1
+  Image_projection_cilia_connected[coordinates_layer2] <- 1
+  
+  rm(list = c("coordinates_layer1", "coordinates_layer2", "df_cilium_all_cilia"))
+  
+  EBImage::writeImage(x = Image_projection_cilia_connected,
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_stack_cilia_connected_cleaned.tif",
+                                              sep = "")),
+                      bits.per.sample = 8,
+                      type = "tiff")
+  
+  
+  # All ciliary objects
+  Image_projection_cilia_connected <- Image_projection_cilia_connected_copy
+  coordinates_layer1 <- matrix(data = c(df_cilium_all$pos_x, df_cilium_all$pos_y, rep(1, length(df_cilium_all$pos_x))), ncol = 3)
+  coordinates_layer2 <- matrix(data = c(df_cilium_all$pos_x, df_cilium_all$pos_y, rep(2, length(df_cilium_all$pos_x))), ncol = 3)
+  
+  Image_projection_cilia_connected[coordinates_layer1] <- 1
+  Image_projection_cilia_connected[coordinates_layer2] <- 1
+  
+  rm(list = c("coordinates_layer1", "coordinates_layer2", "Image_projection_cilia_connected_copy"))
   
   EBImage::writeImage(x = Image_projection_cilia_connected,
                       files = file.path(output_dir,
@@ -1380,7 +1609,6 @@ detectCilia <- function(
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
-  
   
   
   # 5.3 Add cilium numbers to image ----------------------------------------
