@@ -24,6 +24,8 @@ summarizeCiliaInformation <- function(
 
   df_cilium_summary <- data.frame(cilium = sort(number_of_cilia),
                                   cilium_shape = NA,
+                                  lowest_cilium_layer = NA,
+                                  uppermost_cilium_layer = NA,
                                   vertical_length_in_um = NA,
                                   vertical_length_in_layers = NA,
                                   horizontal_length_in_um = NA,
@@ -49,6 +51,9 @@ summarizeCiliaInformation <- function(
       vertical_length_in_layers <- upper_layer-lower_layer + 1 # in z stack layers
       vertical_length_in_um <- (upper_layer - lower_layer + 1) * slice_distance # in \mu m
     }else{
+      lower_layer <- NA
+      upper_layer <- NA
+      
       vertical_length_in_layers <- NA
       vertical_length_in_um     <- NA
     }
@@ -70,7 +75,7 @@ summarizeCiliaInformation <- function(
 
     # The side with more points shall represent the x-axis in the regression
     if(number_of_pos_y_points > number_of_pos_x_points){
-      # print(paste("Cilium Nr. ", i, " is elongated in x-direction more than in y-direction.", sep=""))
+      # print(paste("Cilium no. ", i, " is elongated in x-direction more than in y-direction.", sep=""))
       # column is x-axis (as usually)
       linear_model <- lm(pos_x ~ pos_y, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
@@ -85,7 +90,7 @@ summarizeCiliaInformation <- function(
       horizontal_length_in_um <- horizontal_length_in_pixels * pixel_size # in \mu m
 
     }else{
-      # print(paste("Cilium Nr. ", i, " is elongated in y-direction more than in x-direction.", sep=""))
+      # print(paste("Cilium no. ", i, " is elongated in y-direction more than in x-direction.", sep=""))
       # pos_x is x-axis
       linear_model <- lm(pos_y ~ pos_x, df_cilium_projection)
       slope <- as.numeric(linear_model$coefficients[2])
@@ -104,12 +109,14 @@ summarizeCiliaInformation <- function(
     # Total length of the cilium
     total_length_in_um <- sqrt(horizontal_length_in_um*horizontal_length_in_um + vertical_length_in_um*vertical_length_in_um)
     
-    df_cilium_summary$cilium_shape[df_cilium_summary$cilium == i] <- cilium_shape
-    df_cilium_summary$vertical_length_in_um[df_cilium_summary$cilium == i] <- vertical_length_in_um
-    df_cilium_summary$vertical_length_in_layers[df_cilium_summary$cilium == i] <- vertical_length_in_layers
-    df_cilium_summary$horizontal_length_in_um[df_cilium_summary$cilium == i] <- horizontal_length_in_um
+    df_cilium_summary$cilium_shape[df_cilium_summary$cilium == i]                <- cilium_shape
+    df_cilium_summary$lowest_cilium_layer[df_cilium_summary$cilium == i]         <- lower_layer
+    df_cilium_summary$uppermost_cilium_layer[df_cilium_summary$cilium == i]      <- upper_layer
+    df_cilium_summary$vertical_length_in_um[df_cilium_summary$cilium == i]       <- vertical_length_in_um
+    df_cilium_summary$vertical_length_in_layers[df_cilium_summary$cilium == i]   <- vertical_length_in_layers
+    df_cilium_summary$horizontal_length_in_um[df_cilium_summary$cilium == i]     <- horizontal_length_in_um
     df_cilium_summary$horizontal_length_in_pixels[df_cilium_summary$cilium == i] <- horizontal_length_in_pixels
-    df_cilium_summary$total_length_in_um[df_cilium_summary$cilium == i] <- total_length_in_um
+    df_cilium_summary$total_length_in_um[df_cilium_summary$cilium == i]          <- total_length_in_um
   }
   
   number_of_digits <- floor(sqrt(min_cilium_area))
