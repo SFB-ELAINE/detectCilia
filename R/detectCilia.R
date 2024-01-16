@@ -26,7 +26,7 @@
 #' threshold to find cilia positions (either "mean" or "max").
 #' @param use_histogram_equalization_for_threshold_calculation A Boolean
 #' stating whether to use a histogram equalization algorithm for determining
-#' threshold values.
+#' threshold values and finding cilia in projection.
 #' @param threshold_by_density_of_cilium_pixels A Boolean.
 #'   * `TRUE` (the default): Disregard the custom threshold values (if given)
 #'   and, instead, use a function to calculate the binarization thresholds by
@@ -55,6 +55,10 @@
 #' @param slice_distance A number showing the distance of two consecutive
 #' z-stack layers in micrometers.
 #' @param nuc_mask_width_height Number of pixels (integer) for nuclei detection.
+#' @param export_normalized_images A Boolean.
+#'   * `TRUE`: Also export the images with a normalized version of the original
+#'   z-stack projection/z-stack layer.
+#'   * `FALSE` (Default): Do not export normalized images.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
@@ -90,7 +94,8 @@ detectCilia <- function(
   number_size_factor = NULL,
   pixel_size = NULL,
   slice_distance = NULL,
-  nuc_mask_width_height = NULL) {
+  nuc_mask_width_height = NULL,
+  export_normalized_images = FALSE) {
   
   
   # 0. Basics --------------------------------------------------------------
@@ -468,6 +473,15 @@ detectCilia <- function(
   # Count number of cells
   nucNo <- max(nmask_watershed)
   
+  if(export_normalized_images){
+    EBImage::writeImage(x = nmask_watershed,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_nucleimask.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
   
   
   # ---------------------------------------------------------------------- #
@@ -573,7 +587,7 @@ detectCilia <- function(
     EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                         files = file.path(output_dir,
                                           paste(input_file_name,
-                                                "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                                "_projection_cilia_all_histogram_equalized_normalized.tif",
                                                 sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")
@@ -1053,7 +1067,7 @@ detectCilia <- function(
     EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                         files = file.path(output_dir,
                                           paste(input_file_name,
-                                                "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                                "_projection_cilia_all_histogram_equalized_normalized.tif",
                                                 sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")
@@ -1453,6 +1467,24 @@ detectCilia <- function(
     
     Image <-  image_data[,,,i]
     
+    if(export_normalized_images){
+      Image_normalized <- image_data[,,,i]
+      Image_normalized <- EBImage::normalize(Image_normalized)
+      
+      Image_normalized[coordinates_layer1] <- 1
+      Image_normalized[coordinates_layer2] <- 1
+      
+      Image_normalized <- EBImage::Image(data = Image_normalized, colormode = "color")
+      EBImage::writeImage(x = Image_normalized,
+                          files = file.path(output_dir,
+                                            paste(input_file_name,
+                                                  "_cilia_layer_",
+                                                  i, "_normalized.tif",
+                                                  sep = "")),
+                          bits.per.sample = 8,
+                          type = "tiff")
+    }
+    
     Image[coordinates_layer1] <- 1
     Image[coordinates_layer2] <- 1
     
@@ -1489,6 +1521,24 @@ detectCilia <- function(
                                         df_cilium_information$pos_y[df_cilium_information$layer == -1],
                                         rep(2, length(df_cilium_information$pos_x[df_cilium_information$layer == -1]))), ncol = 3)
   
+  
+  if(export_normalized_images){
+    Image_projection_cilia_normalized <- Image_projection_cilia
+    Image_projection_cilia_normalized <- EBImage::normalize(Image_projection_cilia_normalized)
+    
+    Image_projection_cilia_normalized[coordinates_layer1] <- 1
+    Image_projection_cilia_normalized[coordinates_layer2] <- 1
+    
+    EBImage::writeImage(x = Image_projection_cilia_normalized,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_projection_cilia_unconnected_normalized.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
+  
+  
   Image_projection_cilia[coordinates_layer1] <- 1
   Image_projection_cilia[coordinates_layer2] <- 1
   
@@ -1497,7 +1547,7 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_cilia,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_unconnected.tif",
+                                              "_projection_cilia_unconnected.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
@@ -1572,12 +1622,12 @@ detectCilia <- function(
   # }
   # rm(k)
   
-  # TRUE ciliary objects
+  # Cleaned ciliary objects
   Image_projection_cilia_connected_copy <- Image_projection_cilia_connected
   df_cilium_all_cilia <- df_cilium_information[df_cilium_information$layer == -99 & df_cilium_information$cilium_shape,]
   coordinates_layer1 <- matrix(data = c(df_cilium_all_cilia$pos_x, df_cilium_all_cilia$pos_y, rep(1, length(df_cilium_all_cilia$pos_x))), ncol = 3)
   coordinates_layer2 <- matrix(data = c(df_cilium_all_cilia$pos_x, df_cilium_all_cilia$pos_y, rep(2, length(df_cilium_all_cilia$pos_x))), ncol = 3)
-  
+
   Image_projection_cilia_connected[coordinates_layer1] <- 1
   Image_projection_cilia_connected[coordinates_layer2] <- 1
   
@@ -1586,7 +1636,7 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_cilia_connected,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_connected_cleaned.tif",
+                                              "_projection_cilia_connected_cleaned.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
@@ -1597,6 +1647,23 @@ detectCilia <- function(
   coordinates_layer1 <- matrix(data = c(df_cilium_all$pos_x, df_cilium_all$pos_y, rep(1, length(df_cilium_all$pos_x))), ncol = 3)
   coordinates_layer2 <- matrix(data = c(df_cilium_all$pos_x, df_cilium_all$pos_y, rep(2, length(df_cilium_all$pos_x))), ncol = 3)
   
+  if(export_normalized_images){
+    Image_projection_cilia_connected_normalized <- Image_projection_cilia_connected
+    Image_projection_cilia_connected_normalized <- EBImage::normalize(Image_projection_cilia_connected_normalized)
+    
+    Image_projection_cilia_connected_normalized[coordinates_layer1] <- 1
+    Image_projection_cilia_connected_normalized[coordinates_layer2] <- 1
+    
+    EBImage::writeImage(x = Image_projection_cilia_connected_normalized,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_projection_cilia_connected_normalized.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
+  
+  
   Image_projection_cilia_connected[coordinates_layer1] <- 1
   Image_projection_cilia_connected[coordinates_layer2] <- 1
   
@@ -1605,7 +1672,7 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_cilia_connected,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_connected.tif",
+                                              "_projection_cilia_connected.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
@@ -1614,6 +1681,11 @@ detectCilia <- function(
   # 5.3 Add cilium numbers to image ----------------------------------------
   Image_projection_numbers <- Image_projection_cilia_connected
   image_projection_numbers <- as.array(Image_projection_numbers)
+  
+  if(export_normalized_images){
+    image_projection_numbers_normalized <- as.array(
+      Image_projection_cilia_connected_normalized )
+  }
   
   for(i in unique(df_cilium_all$ciliumNumber) ){
     ciliumNumber <- i
@@ -1628,6 +1700,18 @@ detectCilia <- function(
                                                  pos_y = pos_y,
                                                  number_size_factor = number_size_factor,
                                                  number_color = "red")
+    
+    if(export_normalized_images){
+      image_projection_numbers_normalized <- addNumberToImage(
+        image = image_projection_numbers_normalized,
+        number = ciliumNumber,
+        pos_x = pos_x,
+        pos_y = pos_y,
+        number_size_factor = number_size_factor,
+        number_color = "red")
+    }
+    
+    
   }
   rm(i)
   
@@ -1636,11 +1720,23 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_numbers,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_all_numbers.tif",
+                                              "_projection_cilia_all_numbers.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
   
+  
+  if(export_normalized_images){
+    Image_projection_numbers_normalized <- EBImage::Image(data = image_projection_numbers_normalized,
+                                               colormode = "color")
+    EBImage::writeImage(x = Image_projection_numbers_normalized,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_projection_cilia_all_numbers_normalized.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
   
   
   # 5.4 Add nuclei and cilium numbers to image -----------------------------
@@ -1695,7 +1791,28 @@ detectCilia <- function(
         number_size_factor = number_size_factor,
         number_color = "blue")
       
+      
+      if(export_normalized_images){
+        image_projection_numbers_normalized <- addNumberToImage(
+          image = image_projection_numbers_normalized,
+          number = i,
+          pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+          pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
+          number_size_factor = number_size_factor,
+          number_color = "green")
+        
+        image_projection_numbers_normalized <- addNumberToImage(
+          image = image_projection_numbers_normalized,
+          number = i,
+          pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+          pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
+          number_size_factor = number_size_factor,
+          number_color = "blue")
+      }
+      
+      
     }
+    
     
     rm(i)
   }
@@ -1715,10 +1832,30 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_numbers,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_all_numbers_nuclei.tif",
+                                              "_projection_cilia_all_numbers_nuclei.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
+  
+  
+  if(export_normalized_images){
+    # Add border of nuclei and save file
+    Image_projection_numbers_normalized <- EBImage::Image(image_projection_numbers_normalized)
+    EBImage::colorMode(Image_projection_numbers_normalized) <- "color"
+    EBImage::colorMode(nmask_watershed) <- "gray"
+    
+    Image_projection_numbers_normalized <- EBImage::paintObjects(x = nmask_watershed,
+                                                      tgt = Image_projection_numbers_normalized,
+                                                      col='#ff00ff')
+    
+    EBImage::writeImage(x = Image_projection_numbers_normalized,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_projection_cilia_all_numbers_nuclei_normalized.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
   
   # 5.6 Normalize and histogram equalized image ----------------------------
   
@@ -1728,10 +1865,31 @@ detectCilia <- function(
   EBImage::writeImage(x = Image_projection_histogram_equalization_normalized,
                       files = file.path(output_dir,
                                         paste(input_file_name,
-                                              "_stack_cilia_all_histogram_equalized_normalized.tif",
+                                              "_projection_histogram_equalized_normalized.tif",
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
+  
+  EBImage::writeImage(x = Image_projection,
+                      files = file.path(output_dir,
+                                        paste(input_file_name,
+                                              "_projection.tif",
+                                              sep = "")),
+                      bits.per.sample = 8,
+                      type = "tiff")
+  
+  if(export_normalized_images){
+    Image_projection_normalized <- EBImage::normalize(
+      Image_projection)
+    
+    EBImage::writeImage(x = Image_projection_normalized,
+                        files = file.path(output_dir,
+                                          paste(input_file_name,
+                                                "_projection_normalized.tif",
+                                                sep = "")),
+                        bits.per.sample = 8,
+                        type = "tiff")
+  }
   
   
   # 5.7 Save function call and used parameter values -----------------------

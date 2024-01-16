@@ -65,8 +65,6 @@ pixel_size <- 0.219645 # in \mu m
 # Distance between two layers in micrometers
 slice_distance <- 0.31607# in \mu m
 
-cilium_color <- "red"
-
 # Manually set mask width here because image is small
 nuc_mask_width_height <- 100
 
@@ -79,6 +77,8 @@ output_dir <- file.path(getwd(), "output")
 # Directory of the images
 input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
                           package = "detectCilia", mustWork = TRUE)
+input_file <- system.file("extdata", "testImageCzi", "test.czi",
+                          package = "detectCilia", mustWork = TRUE)
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -88,13 +88,26 @@ input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
 detectCilia_output_list <- detectCilia::detectCilia(
   input_dir_tif = input_dir,
   output_dir = output_dir,
-  cilium_color = cilium_color,
   pixel_size = pixel_size,
   slice_distance = slice_distance,
-  nuc_mask_width_height = nuc_mask_width_height)
+  nuc_mask_width_height = nuc_mask_width_height,
+  number_size_factor = 0.2)
 
 ## SECOND EXAMPLE CZI FILE -------------------------------------------------
 
 # Obtain all positions of cilia in every z-layer
 detectCilia_output_list2 <- detectCilia::detectCilia(input_file_czi = input_file,
                                                      output_dir = output_dir)
+
+
+
+
+
+# Example for detectCilia paper --------------------------------------------
+input_file <- file.path("C:", "Users", "Kai", "Documents", "git",
+                        "gitlabElaine", "2022 DetectCilia", "workflow",
+                        "190815_EV38_2_Collagen_ITSwithAsc+Dexa_63x_zstack_3.czi")
+detectCilia_output_list3 <- detectCilia::detectCilia(input_file_czi = input_file,
+                                                     export_normalized_images = TRUE)
+
+

@@ -4,4 +4,5 @@
 .Ruserdata
 detectCilia.Rproj
 inst/testscriptDevelop.R
+inst/extdate/testImageCzi/test.czi
 output_compare/
