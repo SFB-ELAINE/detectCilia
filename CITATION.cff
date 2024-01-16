@@ -9,7 +9,7 @@ type: software
 license: GPL-3.0-or-later
 title: 'detectCilia: Detect and measure the lengths of primary cilia in microsopy
   images'
-version: 0.7.5
+version: 0.7.6
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
 authors:
@@ -69,7 +69,7 @@ references:
   - name: R Core Team
   location:
     name: Vienna, Austria
-  year: '2023'
+  year: '2024'
   institution:
     name: R Foundation for Statistical Computing
   version: '>= 4.0.0'
@@ -88,7 +88,7 @@ references:
     given-names: Marcel
     email: marcel.ramos@roswellpark.org
     orcid: https://orcid.org/0000-0002-3242-0582
-  year: '2023'
+  year: '2024'
   version: '>= 1.30.19'
 - type: software
   title: dplyr
@@ -113,7 +113,7 @@ references:
     given-names: Davis
     email: davis@posit.co
     orcid: https://orcid.org/0000-0003-4777-038X
-  year: '2023'
+  year: '2024'
   version: '>= 1.0.10'
 - type: software
   title: EBImage
@@ -136,7 +136,7 @@ references:
     given-names: with contributions from Joseph
   - family-names: Marais
     given-names: Philip A.
-  year: '2023'
+  year: '2024'
   doi: 10.18129/B9.bioc.EBImage
   version: '>= 4.40.0'
 - type: software
@@ -152,7 +152,7 @@ references:
   - family-names: Wickham
     given-names: Hadley
     email: hadley@rstudio.com
-  year: '2023'
+  year: '2024'
   version: '>= 2.0.3'
 - type: software
   title: readCzi
@@ -164,7 +164,7 @@ references:
     given-names: Kai
     email: kai.budde-sagert@uni-rostock.de
     orcid: https://orcid.org/0000-0001-6836-9865
-  year: '2023'
+  year: '2024'
   version: '>= 0.3.0'
 - type: software
   title: readr
@@ -182,7 +182,7 @@ references:
     given-names: Jennifer
     email: jenny@posit.co
     orcid: https://orcid.org/0000-0002-6983-2759
-  year: '2023'
+  year: '2024'
   version: '>= 2.1.3'
 - type: software
   title: rlang
@@ -197,5 +197,5 @@ references:
   - family-names: Wickham
     given-names: Hadley
     email: hadley@posit.co
-  year: '2023'
+  year: '2024'
   version: '>= 1.0.6'
