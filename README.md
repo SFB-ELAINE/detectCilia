@@ -1,5 +1,5 @@
 # detectCilia
-**detectCilia** is an R package to detect cilia and other colored structures in confocal fluorescence microscopy images.
+**detectCilia** is an R package to detect cilia (or other colored structures) in confocal fluorescence microscopy images.
 
 ## Requirements
 It is necessary to load a TIF (or a directory of TIF files) or a CZI file of either a z stack or its projection. Both the nuclei and the cilia (or other small structures) need to be labelled and captured in a specific channel.
@@ -12,7 +12,7 @@ The following example (script) shows the capabilities of the package. The script
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
 # Created: 2019/12/01
-# Last changed: 2023/12/02
+# Last changed: 2024/01/17
 
 
 # Delete everything in the environment
@@ -57,22 +57,20 @@ require(detectCilia)
 # Please adapt the following parameters ####################################
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+# Directory for the output
+output_dir <- file.path(getwd(), "output")
+
 ### TIF DIRECTORY ###
 
 # Directory of the images
 input_dir <- system.file("extdata", "testImagesTif",
                           package = "detectCilia", mustWork = TRUE)
 
-# Directory for the output
-output_dir <- file.path(getwd(), "output")
-
 # Size of a pixel in micrometer
 pixel_size <- 0.219645 # in \mu m
 
 # Distance between two layers in micrometers
 slice_distance <- 0.31607# in \mu m
-
-cilium_color <- "red"
 
 # Manually set mask width here because image is small
 nuc_mask_width_height <- 100
@@ -83,7 +81,6 @@ nuc_mask_width_height <- 100
 # Directory of the images
 input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
                           package = "detectCilia", mustWork = TRUE)
-
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -96,7 +93,8 @@ detectCilia_output_list <- detectCilia::detectCilia(
   cilium_color = cilium_color,
   pixel_size = pixel_size,
   slice_distance = slice_distance,
-  nuc_mask_width_height = nuc_mask_width_height)
+  nuc_mask_width_height = nuc_mask_width_height,
+  number_size_factor = 0.2)
 
 ## SECOND EXAMPLE CZI FILE -------------------------------------------------
 
