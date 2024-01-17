@@ -2,25 +2,19 @@
 % Please edit documentation in R/resizeImage.R
 \name{resizeImage}
 \alias{resizeImage}
-\alias{resizeimage}
-\title{resizeImage}
+\title{Resizes an image}
 \usage{
 resizeImage(image = NULL, number_size_factor = 1)
 }
 \arguments{
-\item{image}{An one to three-dimensional array of numbers between 0 and 1}
+\item{image}{A one to three-dimensional array of numbers between 0 and 1}
 
-\item{number_size_factor}{A number (factor for resizing the number)}
+\item{number_size_factor}{A number being the factor for resizing the
+image of a number.}
 }
 \value{
 An array (resized image).
 }
 \description{
-Resizes an image
-}
-\details{
-Resizes an image with a given scaling factor
-}
-\author{
-Kai Budde-Sagert
+`resizeImage()` eesizes an image with a given scaling factor
 }

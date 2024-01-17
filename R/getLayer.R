@@ -1,12 +1,11 @@
-#' @title getLayer
-#' @description Get a specific layer of the image
-#' @details By using an x-y-3(rgb)-representation of an image, you can
-#' extract one layer.
-#' @aliases getlayer
-#' @author Kai Budde-Sagert
-#' @export getLayer
-#' @param image An three-dimensional array of numbers between 0 and 1
-#' @param layer A character (color of the layer)
+#' Get a specific layer of the image
+#' 
+#' `getLayer()` extracts a specific layer of an image (being x-y-3(rgb)-
+#' representation).
+
+#' @param image An three-dimensional array of numbers between 0 and 1.
+#' @param layer A character being the color of the layer.
+
 #' @returns An array (specific channel of image).
 
 getLayer <- function(image = NULL,

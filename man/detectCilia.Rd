@@ -22,7 +22,8 @@ detectCilia(
   number_size_factor = NULL,
   pixel_size = NULL,
   slice_distance = NULL,
-  nuc_mask_width_height = NULL
+  nuc_mask_width_height = NULL,
+  export_normalized_images = FALSE
 )
 }
 \arguments{
@@ -52,7 +53,7 @@ looking at the density of cilium color pixels found in the entire image.
 
 \item{use_histogram_equalization_for_threshold_calculation}{A Boolean
 stating whether to use a histogram equalization algorithm for determining
-threshold values.}
+threshold values and finding cilia in projection.}
 
 \item{threshold_find}{A number between 0 and 1 as the minimum
 intensity of possible cilia pixels in the z-stack projection.}
@@ -86,6 +87,11 @@ pixel in micrometers}
 z-stack layers in micrometers.}
 
 \item{nuc_mask_width_height}{Number of pixels (integer) for nuclei detection.}
+
+\item{export_normalized_images}{A Boolean.
+* `TRUE`: Also export the images with a normalized version of the original
+z-stack projection/z-stack layer.
+* `FALSE` (Default): Do not export normalized images.}
 }
 \value{
 A list with the following content: 
@@ -109,7 +115,7 @@ image. (The x-axis points downwards and the y-axis to the right.)
 \examples{
 # Detect all cilia (red structures) (and nuclei (blue structures)) in
 # a CZI image
-detectCilia(input_file_czi = input_file, output_dir = output_dir,
-cilium_color = "red", pixel_size = 0.219645, slice_distance = 0.31607,
-nuc_mask_width_height = 100) 
+detectCilia::detectCilia(input_file_czi = system.file("extdata",
+"testImageCzi", "CiliaImage.czi", package = "detectCilia",
+mustWork = TRUE))
 }

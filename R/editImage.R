@@ -1,16 +1,14 @@
-#' @title editImage
-#' @description Get the layer of the primary cilia
-#' @details By using an x-y-3(rgb)-representation of an image, you can
-#' extract the information of the cilia in an image and only use those pixel
-#' that are above a certain threshold.
-#' @aliases editimage imageedit imageEdit
-#' @author Kai Budde-Sagert
-#' @export editImage
-#' @param image An three-dimensional array of numbers between 0 and 1
-#' @param object_color A character (color of the staining of the object)
-#' @param threshold A number (that determines the brightness of a pixel to
-#' be counted as cilium pixel)
-#' @returns An array (changed image).
+#' Calculate binary mask
+#' 
+#' `editImage()` masks an image layer depending on a threshold.
+#' 
+#' @param image An three-dimensional array of numbers between 0 and 1.
+#' @param object_color A character being the color of the staining of the
+#' object to be masked.
+#' @param threshold A number that determines the brightness of a pixel to
+#' be counted as a cilium pixel.
+#' 
+#' @returns A binary image.
 
 editImage <- function(image = NULL,
                       object_color = NULL,
@@ -45,12 +43,8 @@ editImage <- function(image = NULL,
     return()
   }
 
-  # higher contrast of the cilia -------------------------------------------
-  #threshold <- threshold * sum(image_cilia[,])/sum(image_cilia[,]>0)
-  #print(threshold)
-  #print(sum(image_cilia[,])/sum(image_cilia[,]>0))
-  #print(threshold)
-  
+  # Calculate binary mask of cilia pixels ----------------------------------
+
   # Making sure that the calculated threshold is not above 1 or below 0
   if(threshold > 1){
     threshold <- 1

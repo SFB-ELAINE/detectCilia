@@ -2,32 +2,22 @@
 % Please edit documentation in R/editImage.R
 \name{editImage}
 \alias{editImage}
-\alias{editimage}
-\alias{imageedit}
-\alias{imageEdit}
-\title{editImage}
+\title{Calculate binary mask}
 \usage{
 editImage(image = NULL, object_color = NULL, threshold = NULL)
 }
 \arguments{
-\item{image}{An three-dimensional array of numbers between 0 and 1}
+\item{image}{An three-dimensional array of numbers between 0 and 1.}
 
-\item{object_color}{A character (color of the staining of the object)}
+\item{object_color}{A character being the color of the staining of the
+object to be masked.}
 
-\item{threshold}{A number (that determines the brightness of a pixel to
-be counted as cilium pixel)}
+\item{threshold}{A number that determines the brightness of a pixel to
+be counted as a cilium pixel.}
 }
 \value{
-An array (changed image).
+A binary image.
 }
 \description{
-Get the layer of the primary cilia
-}
-\details{
-By using an x-y-3(rgb)-representation of an image, you can
-extract the information of the cilia in an image and only use those pixel
-that are above a certain threshold.
-}
-\author{
-Kai Budde-Sagert
+`editImage()` masks an image layer depending on a threshold.
 }

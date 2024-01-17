@@ -2,9 +2,7 @@
 % Please edit documentation in R/summarizeCiliaInformation.R
 \name{summarizeCiliaInformation}
 \alias{summarizeCiliaInformation}
-\alias{summarizeCiliumInformation}
-\alias{summarizeciliainformation}
-\title{summarizeCiliaInformation}
+\title{Summarize the information of found cilia}
 \usage{
 summarizeCiliaInformation(
   df_cilium_information = df_cilium_information,
@@ -14,25 +12,21 @@ summarizeCiliaInformation(
 )
 }
 \arguments{
-\item{df_cilium_information}{A data frame}
+\item{df_cilium_information}{A data frame with found cilia.}
 
-\item{min_cilium_area}{A number (min number of pixels needed for a layer being part of a cilium)}
+\item{min_cilium_area}{A number for the minimum number of pixels needed
+to represent a cilium.}
 
-\item{pixel_size}{A number (size of one pixel in micrometer)}
+\item{pixel_size}{A number depicting the size of one pixel in micrometers.}
 
-\item{slice_distance}{A number (distance of two consecutive slices in
-z-direction in micrometer)}
+\item{slice_distance}{A number depicting the distance of two consecutive
+z-stack layers in micrometers.}
 }
 \value{
 A tibble with summarized cilium information (lengths).
 }
 \description{
-Summarizes the information of found cilia in images
-}
-\details{
-Input should be the result of detectCilia.R.
-The output is a data frame with the lengths of the found cilia.
-}
-\author{
-Kai Budde-Sagert
+`summarizeCiliaInformation()` summarizes the information of cilia found
+by the main function detectCilia.R. The output is a data frame with the
+lengths of the found cilia.
 }

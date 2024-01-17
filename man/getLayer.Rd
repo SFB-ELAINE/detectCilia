@@ -2,26 +2,19 @@
 % Please edit documentation in R/getLayer.R
 \name{getLayer}
 \alias{getLayer}
-\alias{getlayer}
-\title{getLayer}
+\title{Get a specific layer of the image}
 \usage{
 getLayer(image = NULL, layer = NULL)
 }
 \arguments{
-\item{image}{An three-dimensional array of numbers between 0 and 1}
+\item{image}{An three-dimensional array of numbers between 0 and 1.}
 
-\item{layer}{A character (color of the layer)}
+\item{layer}{A character being the color of the layer.}
 }
 \value{
 An array (specific channel of image).
 }
 \description{
-Get a specific layer of the image
-}
-\details{
-By using an x-y-3(rgb)-representation of an image, you can
-extract one layer.
-}
-\author{
-Kai Budde-Sagert
+`getLayer()` extracts a specific layer of an image (being x-y-3(rgb)-
+representation).
 }

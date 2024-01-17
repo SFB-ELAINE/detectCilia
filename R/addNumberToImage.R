@@ -14,7 +14,6 @@
 #' added.
 #'
 #' @return An array (image) with added number.
-#' @export addNumberToImage
 
 addNumberToImage <- function(image = NULL,
                              number = NULL,

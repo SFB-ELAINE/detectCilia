@@ -1,11 +1,11 @@
-#' @title resizeImage
-#' @description Resizes an image
-#' @details Resizes an image with a given scaling factor
-#' @aliases resizeimage
-#' @author Kai Budde-Sagert
-#' @export addNumberToImage
-#' @param image An one to three-dimensional array of numbers between 0 and 1
-#' @param number_size_factor A number (factor for resizing the number)
+#' Resizes an image
+#' 
+#' `resizeImage()` eesizes an image with a given scaling factor
+#' 
+#' @param image A one to three-dimensional array of numbers between 0 and 1
+#' @param number_size_factor A number being the factor for resizing the
+#' image of a number.
+#' 
 #' @returns An array (resized image).
 
 resizeImage <- function(image = NULL,

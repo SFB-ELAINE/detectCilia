@@ -35,7 +35,3 @@ An array (image) with added number.
 `addNumberToImage()` adds an image of an integer to a x-y-3(rgb)-
 representation of an image.
 }
-\examples{
-# Add a red number 5 to position 500,500 of a 1024, 1024 image called test_image
-addNumberToImage(test_image, 5, 500, 500)
-}

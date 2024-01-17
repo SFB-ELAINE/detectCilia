@@ -1,17 +1,19 @@
-#' @title summarizeCiliaInformation
-#' @description Summarizes the information of found cilia in images
-#' @details Input should be the result of detectCilia.R.
-#' The output is a data frame with the lengths of the found cilia.
-#' @aliases summarizeCiliumInformation summarizeciliainformation
-#' @author Kai Budde-Sagert
-#' @export summarizeCiliaInformation
+#' Summarize the information of found cilia
+#' 
+#' `summarizeCiliaInformation()` summarizes the information of cilia found
+#' by the main function detectCilia.R. The output is a data frame with the
+#' lengths of the found cilia.
+
+#' @param df_cilium_information A data frame with found cilia.
+#' @param min_cilium_area A number for the minimum number of pixels needed
+#' to represent a cilium.
+#' @param pixel_size A number depicting the size of one pixel in micrometers.
+#' @param slice_distance A number depicting the distance of two consecutive
+#' z-stack layers in micrometers.
+#' 
 #' @import graphics
 #' @import stats
-#' @param df_cilium_information A data frame
-#' @param min_cilium_area A number (min number of pixels needed for a layer being part of a cilium)
-#' @param pixel_size A number (size of one pixel in micrometer)
-#' @param slice_distance A number (distance of two consecutive slices in
-#' z-direction in micrometer)
+#' 
 #' @returns A tibble with summarized cilium information (lengths).
 
 summarizeCiliaInformation <- function(
@@ -58,9 +60,6 @@ summarizeCiliaInformation <- function(
       vertical_length_in_um     <- NA
     }
     
-
-    
-
     # Find pixels of z-projection ##
     # Only keep non-duplicated columns pos_x and pos_y (all unique positions)
     df_cilium_projection <- df_cilium_projection[,c(1,2)]
