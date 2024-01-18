@@ -3,7 +3,7 @@ citHeader("To cite the detectCilia package in publications, please use:")
 bibentry(bibtype = "Manual",
   title = "{detectCilia}: R package for detecting the lengths of primary cilia",
   author = person("Kai", "Budde-Sagert"),
-  year = 2023,
+  year = 2024,
   note = "R package version 0.8.1",
   doi = "10.5281/zenodo.10521546",
   url = "https://github.com/SFB-ELAINE/detectCilia"
@@ -17,6 +17,6 @@ bibentry(
   volume = 00,
   number = 00,
   pages = 00,
-  year = 2023,
+  year = 2024,
   doi = "NN"
   )
