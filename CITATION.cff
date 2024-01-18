@@ -7,9 +7,10 @@ cff-version: 1.2.0
 message: 'To cite package "detectCilia" in publications use:'
 type: software
 license: GPL-3.0-or-later
-title: 'detectCilia: Detect and measure the lengths of primary cilia in microsopy
+title: 'detectCilia: Detect and measure the lengths of primary cilia in microscopy
   images'
-version: 0.8.0
+version: 0.8.1
+doi: 10.5281/zenodo.10521546
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
 authors:
@@ -19,14 +20,15 @@ authors:
   orcid: https://orcid.org/0000-0001-6836-9865
 preferred-citation:
   type: manual
-  title: 'detectCilia: Detecting the lengths of primary cilia'
+  title: 'detectCilia: R package for detecting the lengths of primary cilia'
   authors:
   - family-names: Budde-Sagert
     given-names: Kai
     email: kai.budde-sagert@uni-rostock.de
     orcid: https://orcid.org/0000-0001-6836-9865
   year: '2023'
-  notes: R package version 0.7.3
+  notes: R package version 0.8.1
+  doi: 10.5281/zenodo.10521546
   url: https://github.com/SFB-ELAINE/detectCilia
 repository-code: https://github.com/SFB-ELAINE/detectCilia
 url: https://github.com/SFB-ELAINE/detectCilia
