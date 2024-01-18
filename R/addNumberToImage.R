@@ -88,7 +88,7 @@ addNumberToImage <- function(image = NULL,
     }
     
     # Resize image
-    digit_image <- resizeImage(digit_image, number_size_factor)
+    digit_image <- readCzi::resizeImage(digit_image, number_size_factor)
     digit_images[[i]] <- digit_image
     
     # Save dimensions of all digits

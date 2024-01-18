@@ -36,7 +36,7 @@ if(! "czifile" %in% reticulate::py_list_packages()$package){
 }
 
 # Install the R package for reading czi images
-devtools::install_github("SFB-ELAINE/readCzi", upgrade = "ask")
+devtools::install_github("SFB-ELAINE/readCzi@v0.4.0")
 require(readCzi)
 
 # Install this R package for detecting cilia in microscopy images
