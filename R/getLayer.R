@@ -18,7 +18,12 @@ getLayer <- function(image = NULL,
   }
   
   if(missing(layer)){
+    print("Layer is missing and is given the value red.")
     layer <- "red"
+  }
+  
+  if(is.null(layer)){
+    return(drop(image))
   }
   
   layer <- tolower(layer)

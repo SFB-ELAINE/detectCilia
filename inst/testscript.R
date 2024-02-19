@@ -1,7 +1,7 @@
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
 # Created: 2019/12/01
-# Last changed: 2023/12/02
+# Last changed: 2024/02/19
 
 
 # Delete everything in the environment
@@ -82,7 +82,7 @@ input_file <- system.file("extdata", "testImageCzi", "test.czi",
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-## 1. Example: Find cilia in TIFs of one z-stack image ---------------------
+## FIRST EXAMPLE: Find cilia in TIFs of one z-stack image ------------------
 
 # Obtain all positions of cilia in every z-layer
 detectCilia_output_list <- detectCilia::detectCilia(
@@ -93,15 +93,28 @@ detectCilia_output_list <- detectCilia::detectCilia(
   nuc_mask_width_height = nuc_mask_width_height,
   number_size_factor = 0.2)
 
-## SECOND EXAMPLE CZI FILE -------------------------------------------------
+## SECOND EXAMPLE: CZI file ------------------------------------------------
 
 # Obtain all positions of cilia in every z-layer
 detectCilia_output_list2 <- detectCilia::detectCilia(input_file_czi = input_file,
                                                      output_dir = output_dir)
 
+## THIRD EXAMPLE: Synthetic cilium file ------------------------------------
 
-
-
+input_dir <- system.file("extdata", "ArtificialCilium",
+                         package = "detectCilia", mustWork = TRUE)
+# input_dir <- system.file("extdata", "ArtificialCiliumGray",
+#                          package = "detectCilia", mustWork = TRUE)
+detectCilia_output_list4 <- detectCilia::detectCilia(input_dir_tif = input_dir,
+                                                     export_normalized_images = FALSE,
+                                                     pixel_size = 1,
+                                                     slice_distance = 1,
+                                                     number_of_expected_nuclei = 1,
+                                                     min_cilium_area = 5,
+                                                     max_cilium_area = 50,
+                                                     nucleus_color = NULL,
+                                                     cilium_color = "green",
+                                                     number_size_factor = 0.2)
 
 # Example for detectCilia paper --------------------------------------------
 input_file <- file.path("C:", "Users", "Kai", "Documents", "git",
@@ -109,5 +122,3 @@ input_file <- file.path("C:", "Users", "Kai", "Documents", "git",
                         "190815_EV38_2_Collagen_ITSwithAsc+Dexa_63x_zstack_3.czi")
 detectCilia_output_list3 <- detectCilia::detectCilia(input_file_czi = input_file,
                                                      export_normalized_images = TRUE)
-
-

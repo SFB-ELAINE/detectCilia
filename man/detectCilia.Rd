@@ -23,7 +23,8 @@ detectCilia(
   pixel_size = NULL,
   slice_distance = NULL,
   nuc_mask_width_height = NULL,
-  export_normalized_images = FALSE
+  export_normalized_images = FALSE,
+  number_of_expected_nuclei = NULL
 )
 }
 \arguments{
@@ -92,6 +93,9 @@ z-stack layers in micrometers.}
 * `TRUE`: Also export the images with a normalized version of the original
 z-stack projection/z-stack layer.
 * `FALSE` (Default): Do not export normalized images.}
+
+\item{number_of_expected_nuclei}{A number depicting the number of cells
+(= max. number of cilia) to be found if no nuclei are present in image.}
 }
 \value{
 A list with the following content: 

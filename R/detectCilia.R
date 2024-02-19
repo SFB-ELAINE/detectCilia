@@ -59,6 +59,8 @@
 #'   * `TRUE`: Also export the images with a normalized version of the original
 #'   z-stack projection/z-stack layer.
 #'   * `FALSE` (Default): Do not export normalized images.
+#' @param number_of_expected_nuclei A number depicting the number of cells
+#' (= max. number of cilia) to be found if no nuclei are present in image.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
@@ -95,7 +97,8 @@ detectCilia <- function(
   pixel_size = NULL,
   slice_distance = NULL,
   nuc_mask_width_height = NULL,
-  export_normalized_images = FALSE) {
+  export_normalized_images = FALSE,
+  number_of_expected_nuclei = NULL) {
   
   
   # 0. Basics --------------------------------------------------------------
@@ -218,14 +221,45 @@ detectCilia <- function(
       #   print("The numbering of the layers is inaccurate.")
       # }
       
+      # Create empty z-stack image
       if(layer_number == 1){
-        image_data <- array(0, dim = c(dim(image),length(file_names_tif)))
+        if(length(dim(image)) == 2){
+          #Import grayscale image
+          image_data <- array(0, dim = c(dim(image), length(file_names_tif)))
+        }else if(length(dim(image)) == 3){
+          image_data <- array(0, dim = c(dim(image),length(file_names_tif)))
+        }else{
+          print("Something is wrong with the input image dimension.")
+        }
+        
       }
       
-      image_data[,,,layer_number] <- image
+      if(length(dim(image)) == 2){
+        image_data[,,layer_number] <- image
+      }else if(length(dim(image)) == 3){
+        image_data[,,,layer_number] <- image
+      }else{
+        print("Something is wrong with the input image dimension.")
+      }
+      
     }
-    
     rm(i)
+    
+    # Make it a colored image if it was grayscale
+    if(length(dim(image_data)) == 3){
+      
+      cilium_color <- tolower(cilium_color)
+      if(cilium_color == "red" || cilium_color == "r"){
+        image_data <- EBImage::rgbImage(red = image_data)
+      }else if(cilium_color == "green" || cilium_color == "g"){
+        image_data <- EBImage::rgbImage(green = image_data)
+      }else if(cilium_color == "blue" || cilium_color == "b"){
+        image_data <- EBImage::rgbImage(blue = image_data)
+      }else{
+        print("Please call the function with a correct cilium color name.")
+      }
+      image_data <- as.array(image_data)
+    }
     
   }else if(image_format == "czi"){
     
@@ -264,6 +298,11 @@ detectCilia <- function(
   }
   
   Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+  # if(dim(image_data)[3] == 1){
+  #   Image_data <- EBImage::Image(data = image_data, colormode = "Gray")
+  # }else{
+  #   Image_data <- EBImage::Image(data = image_data, colormode = "Color")
+  # }
   
   
   # 1.3 Calculate missing input parameter values ---------------------------
@@ -346,6 +385,17 @@ detectCilia <- function(
                                          colormode = "Color")
   Image_projection_mean <- EBImage::Image(data = image_projection_mean,
                                           colormode = "Color")
+  # if(dim(image_projection_max)[3] == 1){
+  #   Image_projection_max <- EBImage::Image(data = image_projection_max,
+  #                                          colormode = "Gray")
+  #   Image_projection_mean <- EBImage::Image(data = image_projection_mean,
+  #                                           colormode = "Gray")
+  # }else{
+  #   Image_projection_max <- EBImage::Image(data = image_projection_max,
+  #                                          colormode = "Color")
+  #   Image_projection_mean <- EBImage::Image(data = image_projection_mean,
+  #                                           colormode = "Color")
+  # }
   
   
   
@@ -355,132 +405,139 @@ detectCilia <- function(
   
   # 2. Nuclei detection ----------------------------------------------------
   #    Find and count all nuclei using the max projection
-  
-  # Save only color layer of nuclei
-  Image_nuclei <- getLayer(image = Image_projection_max,
-                           layer = nucleus_color)
-  Image_nuclei <- EBImage::clahe(x = Image_nuclei, nx = 8)
-  
-  # Smooth the image
-  filterSize <- floor(5*(0.22/pixel_size))
-  Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = filterSize)
-  
-  print(paste0("mean(Image_nuclei): ", mean(Image_nuclei)))
-  # Make the image brighter for detection
-  if(mean(Image_nuclei) < 0.05){
-    Image_nuclei <- 10*Image_nuclei
-  }else if(mean(Image_nuclei) < 0.1){
-    Image_nuclei <- 5*Image_nuclei
+  if(is.null(nucleus_color)){
+    nucNo <- number_of_expected_nuclei
+    
   }else{
-    Image_nuclei <- 2*Image_nuclei
-  }
-  
-  #display(Image_nuclei)
-  #display(Image_nuclei, method = "raster", all = TRUE)
-  
-  # Calculate the nucleus mask
-  nmask <- EBImage::thresh(x = Image_nuclei,
-                           w = nuc_mask_width_height,
-                           h = nuc_mask_width_height,
-                           offset = 0.05)
-  # display(nmask)
-  
-  # Morphological opening to remove objects smaller than the structuring element
-  # (disc of size 13)
-  discSize <- floor(13*(0.22/pixel_size))
-  nmask <- EBImage::opening(nmask, EBImage::makeBrush(discSize, shape='disc'))
-  # Fill holes
-  nmask <- EBImage::fillHull(nmask)
-  # Label each connected set of pixels with a distinct ID
-  nmask <- EBImage::bwlabel(nmask)
-  
-  #display(nmask)
-  
-  # Record all nuclei that are at the borders of the image
-  left  <- table(nmask[1, 1:dim(nmask)[2]])
-  top   <- table(nmask[1:dim(nmask)[1],1])
-  right <- table(nmask[dim(nmask)[1], 1:dim(nmask)[2]])
-  bottom <- table(nmask[1:dim(nmask)[1],dim(nmask)[2]])
-  
-  left <- as.integer(names(left))
-  top <- as.integer(names(top))
-  right <- as.integer(names(right))
-  bottom <- as.integer(names(bottom))
-  
-  nuclei_at_borders <- unique(c(left, top, right, bottom))
-  # delete 0s
-  nuclei_at_borders <- nuclei_at_borders[nuclei_at_borders != 0]
-  
-  # Delete all nuclei at border
-  if(length(nuclei_at_borders) > 0){
-    for(i in 1:length(nuclei_at_borders)){
-      EBImage::imageData(nmask)[EBImage::imageData(nmask) == nuclei_at_borders[i]] <- 0
+    # Save only color layer of nuclei
+    Image_nuclei <- getLayer(image = Image_projection_max,
+                             layer = nucleus_color)
+    Image_nuclei <- EBImage::clahe(x = Image_nuclei, nx = 8)
+    
+    # Smooth the image
+    filterSize <- floor(5*(0.22/pixel_size))
+    Image_nuclei <-  EBImage::medianFilter(x = Image_nuclei, size = filterSize)
+    
+    print(paste0("mean(Image_nuclei): ", mean(Image_nuclei)))
+    # Make the image brighter for detection
+    if(mean(Image_nuclei) < 0.05){
+      Image_nuclei <- 10*Image_nuclei
+    }else if(mean(Image_nuclei) < 0.1){
+      Image_nuclei <- 5*Image_nuclei
+    }else{
+      Image_nuclei <- 2*Image_nuclei
     }
-    rm(i)
-  }
-  
-  #display(nmask)
-  
-  # Delete all remaining nuclei that are smaller than 10% of the median size
-  # object sizes
-  # barplot(table(nmask)[-1])
-  
-  nmask <-  EBImage::watershed(EBImage::distmap(nmask), 1)
-  
-  table_nmask <- table(nmask)
-  nuc_min_area_median  <- 0.1*median(table_nmask[-1])
-  nuc_min_area_mean    <- 0.1*mean(table_nmask[-1])
-  
-  if(nuc_min_area_mean > (2*nuc_min_area_median) ){
-    nuc_min_area <- 0.5 * (nuc_min_area_mean + nuc_min_area_median)
-    print("Use combination of mean and median nucleus area for defining minimum nucleus size.")
-  }else{
-    nuc_min_area <- nuc_min_area_median
-  }
-  
-  nuc_max_area_median <- 10 * median(table_nmask[-1])
-  nuc_max_area_mean   <- 10 * mean(table_nmask[-1])
-  
-  if(nuc_max_area_mean > (2*nuc_max_area_median) ){
-    nuc_max_area <- 0.5 * (nuc_max_area_mean + nuc_max_area_median)
-    print("Use combination of mean and median nucleus area for defining maximum nucleus size.")
-  }else{
-    nuc_max_area <- nuc_max_area_median
-  }
-  
-  # remove objects that are smaller than min_nuc_size
-  to_be_removed <- c(as.integer(names(which(table_nmask < nuc_min_area))),
-                     as.integer(names(which(table_nmask > nuc_max_area))))
-  to_be_removed <- sort(to_be_removed)
-  to_be_removed <- to_be_removed[!(to_be_removed == 0)]
-  
-  if(length(to_be_removed) > 0){
-    for(i in 1:length(to_be_removed)){
-      EBImage::imageData(nmask)[EBImage::imageData(nmask) == to_be_removed[i]] <- 0
+    
+    #display(Image_nuclei)
+    #display(Image_nuclei, method = "raster", all = TRUE)
+    
+    # Calculate the nucleus mask
+    nmask <- EBImage::thresh(x = Image_nuclei,
+                             w = nuc_mask_width_height,
+                             h = nuc_mask_width_height,
+                             offset = 0.05)
+    # display(nmask)
+    
+    # Morphological opening to remove objects smaller than the structuring element
+    # (disc of size 13)
+    discSize <- floor(13*(0.22/pixel_size))
+    nmask <- EBImage::opening(nmask, EBImage::makeBrush(discSize, shape='disc'))
+    # Fill holes
+    nmask <- EBImage::fillHull(nmask)
+    # Label each connected set of pixels with a distinct ID
+    nmask <- EBImage::bwlabel(nmask)
+    
+    #display(nmask)
+    
+    # Record all nuclei that are at the borders of the image
+    left  <- table(nmask[1, 1:dim(nmask)[2]])
+    top   <- table(nmask[1:dim(nmask)[1],1])
+    right <- table(nmask[dim(nmask)[1], 1:dim(nmask)[2]])
+    bottom <- table(nmask[1:dim(nmask)[1],dim(nmask)[2]])
+    
+    left <- as.integer(names(left))
+    top <- as.integer(names(top))
+    right <- as.integer(names(right))
+    bottom <- as.integer(names(bottom))
+    
+    nuclei_at_borders <- unique(c(left, top, right, bottom))
+    # delete 0s
+    nuclei_at_borders <- nuclei_at_borders[nuclei_at_borders != 0]
+    
+    # Delete all nuclei at border
+    if(length(nuclei_at_borders) > 0){
+      for(i in 1:length(nuclei_at_borders)){
+        EBImage::imageData(nmask)[EBImage::imageData(nmask) == nuclei_at_borders[i]] <- 0
+      }
+      rm(i)
     }
-    rm(i)
-  }
-  
-  # Recount nuclei
-  nmask <- EBImage::bwlabel(nmask)
-  #display(nmask)
-  
-  # Watershed in order to distinct nuclei that are too close to each other
-  nmask_watershed <-  EBImage::watershed( EBImage::distmap(nmask), 1 )
-  #display(colorLabels(nmask_watershed), all=TRUE)
-  #display(nmask_watershed)
-  
-  # Count number of cells
-  nucNo <- max(nmask_watershed)
-  
-  if(export_normalized_images){
-    EBImage::writeImage(x = nmask_watershed,
-                        files = file.path(output_dir,
-                                          paste(input_file_name,
-                                                "_nucleimask.tif",
-                                                sep = "")),
-                        bits.per.sample = 8,
-                        type = "tiff")
+    
+    #display(nmask)
+    
+    # Delete all remaining nuclei that are smaller than 10% of the median size
+    # object sizes
+    # barplot(table(nmask)[-1])
+    
+    nmask <-  EBImage::watershed(EBImage::distmap(nmask), 1)
+    
+    table_nmask <- table(nmask)
+    nuc_min_area_median  <- 0.1*median(table_nmask[-1])
+    nuc_min_area_mean    <- 0.1*mean(table_nmask[-1])
+    
+    if(nuc_min_area_mean > (2*nuc_min_area_median) ){
+      nuc_min_area <- 0.5 * (nuc_min_area_mean + nuc_min_area_median)
+      print("Use combination of mean and median nucleus area for defining minimum nucleus size.")
+    }else{
+      nuc_min_area <- nuc_min_area_median
+    }
+    
+    nuc_max_area_median <- 10 * median(table_nmask[-1])
+    nuc_max_area_mean   <- 10 * mean(table_nmask[-1])
+    
+    if(nuc_max_area_mean > (2*nuc_max_area_median) ){
+      nuc_max_area <- 0.5 * (nuc_max_area_mean + nuc_max_area_median)
+      print("Use combination of mean and median nucleus area for defining maximum nucleus size.")
+    }else{
+      nuc_max_area <- nuc_max_area_median
+    }
+    
+    # remove objects that are smaller than min_nuc_size
+    to_be_removed <- c(as.integer(names(which(table_nmask < nuc_min_area))),
+                       as.integer(names(which(table_nmask > nuc_max_area))))
+    to_be_removed <- sort(to_be_removed)
+    to_be_removed <- to_be_removed[!(to_be_removed == 0)]
+    
+    if(length(to_be_removed) > 0){
+      for(i in 1:length(to_be_removed)){
+        EBImage::imageData(nmask)[EBImage::imageData(nmask) == to_be_removed[i]] <- 0
+      }
+      rm(i)
+    }
+    
+    # Recount nuclei
+    nmask <- EBImage::bwlabel(nmask)
+    total_nuclei_area <- sum(nmask)
+    #display(nmask)
+    
+    # Watershed in order to distinct nuclei that are too close to each other
+    nmask_watershed <-  EBImage::watershed( EBImage::distmap(nmask), 1 )
+    #display(colorLabels(nmask_watershed), all=TRUE)
+    #display(nmask_watershed)
+    
+    # Count number of cells
+    nucNo <- max(nmask_watershed)
+    mean_nucleus_area_in_pixels <- round(total_nuclei_area / nucNo)
+    
+    if(export_normalized_images){
+      EBImage::writeImage(x = nmask_watershed,
+                          files = file.path(output_dir,
+                                            paste(input_file_name,
+                                                  "_nucleimask.tif",
+                                                  sep = "")),
+                          bits.per.sample = 8,
+                          type = "tiff")
+    }
+    
   }
   
   
@@ -501,13 +558,27 @@ detectCilia <- function(
                 "TRUE.", sep=""))
     
     # Enhance contrast of image projection
+    if(dim(Image_projection_max)[1] %% 8 == 0 &&
+       dim(Image_projection_max)[2] %% 8 == 0){
+      clahe_nx <- 8
+    }else if(dim(Image_projection_max)[1] %% 4 == 0 &&
+             dim(Image_projection_max)[2] %% 4 == 0){
+      clahe_nx <- 4
+    }else if(dim(Image_projection_max)[1] %% 2 == 0 &&
+             dim(Image_projection_max)[2] %% 2 == 0){
+      clahe_nx <- 2
+    }else{
+      print("Something is wrong with the image dimension.")
+    }
+    
+    
     if(projection_method_for_threshold_calculation == "max"){
       Image_projection_histogram_equalization <- EBImage::clahe(
-        x = Image_projection_max)
+        x = Image_projection_max, nx = clahe_nx)
       Image_projection <- Image_projection_max
     }else if(projection_method_for_threshold_calculation == "mean"){
       Image_projection_histogram_equalization <- EBImage::clahe(
-        x = Image_projection_mean)
+        x = Image_projection_mean, nx = clahe_nx)
       Image_projection <- Image_projection_mean
     }else{
       print("Please choose either max or mean as zstack projection method.")
@@ -521,7 +592,6 @@ detectCilia <- function(
       Image_cilia_layer_find <- getLayer(image = Image_projection,
                                          layer = cilium_color)
     }
-
     
     # Calculate ratio of possible cilium pixels determined by the number of
     # identified cells, the image size, and the geometric mean of the cilium area
@@ -540,6 +610,12 @@ detectCilia <- function(
     # in every z-stack layer
     Image_cilia_layer_connect <- getLayer(image = Image_projection_mean,
                                           layer = cilium_color)
+    # if(is.null(cilium_color)){
+    #   Image_cilia_layer_connect <- Image_projection_mean
+    # }else{
+    #   Image_cilia_layer_connect <- getLayer(image = Image_projection_mean,
+    #                                         layer = cilium_color)
+    # }
     
     # threshold_connect
     threshold_connect <- quantile(Image_cilia_layer_connect,
@@ -861,7 +937,7 @@ detectCilia <- function(
   df_cilium_points$fluorescence_intensity <- Image_cilia_layer_find[indices]
   
   df_cilium_points$ClusterNumber <- 0
-
+  
   for(i in unique(df_cilium_points$ciliumNumber)){
     # print(i)
     df_dummy <- df_cilium_points[df_cilium_points$ciliumNumber == i,]
@@ -1344,6 +1420,7 @@ detectCilia <- function(
   # Save found cilia in every z-stack layer
   
   for(i in unique(df_cilium_information$layer[df_cilium_information$layer>0])){
+    
     coordinates_layer1 <- matrix(
       data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
                df_cilium_information$pos_y[df_cilium_information$layer == i],
@@ -1355,6 +1432,29 @@ detectCilia <- function(
                rep(2, length(df_cilium_information$pos_x[df_cilium_information$layer == i]))),
       ncol = 3)
     
+    # if(dim(image_data)[3] == 1){
+    #   coordinates_layer1 <- matrix(
+    #     data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+    #              df_cilium_information$pos_y[df_cilium_information$layer == i]),
+    #     ncol = 2)
+    #   coordinates_layer2 <- matrix(
+    #     data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+    #              df_cilium_information$pos_y[df_cilium_information$layer == i]),
+    #     ncol = 2)
+    # }else{
+    #   coordinates_layer1 <- matrix(
+    #     data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+    #              df_cilium_information$pos_y[df_cilium_information$layer == i],
+    #              rep(1, length(df_cilium_information$pos_x[df_cilium_information$layer == i]))),
+    #     ncol = 3)
+    #   coordinates_layer2 <- matrix(
+    #     data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
+    #              df_cilium_information$pos_y[df_cilium_information$layer == i],
+    #              rep(2, length(df_cilium_information$pos_x[df_cilium_information$layer == i]))),
+    #     ncol = 3)
+    # }
+    
+    
     Image <-  image_data[,,,i]
     
     if(export_normalized_images){
@@ -1364,8 +1464,14 @@ detectCilia <- function(
       Image_normalized[coordinates_layer1] <- 1
       Image_normalized[coordinates_layer2] <- 1
       
+      # if(length(dim(Image_normalized)) == 2){
+      #   Image_normalized <- EBImage::Image(data = Image_normalized,
+      #                                      colormode = "Gray")
+      # }else{
       Image_normalized <- EBImage::Image(data = Image_normalized,
                                          colormode = "color")
+      # }
+      
       EBImage::writeImage(x = Image_normalized,
                           files = file.path(output_dir,
                                             paste(input_file_name,
@@ -1441,7 +1547,7 @@ detectCilia <- function(
                                               sep = "")),
                       bits.per.sample = 8,
                       type = "tiff")
- 
+  
   # ---------------------------------------------------------------------- #
   # -------------------------- 5. Save results --------------------------- #
   # ---------------------------------------------------------------------- #
@@ -1515,7 +1621,7 @@ detectCilia <- function(
              df_cilium_all_cilia$pos_y,
              rep(2, length(df_cilium_all_cilia$pos_x))),
     ncol = 3)
-
+  
   Image_projection_cilia_connected[coordinates_layer1] <- 1
   Image_projection_cilia_connected[coordinates_layer2] <- 1
   
@@ -1639,124 +1745,128 @@ detectCilia <- function(
   
   
   # 5.4 Add nuclei and cilium numbers to image -----------------------------
-  
-  # Include numbers of nuclei
-  table_nmask_watershed <- table(nmask_watershed)
-  df_nuclei_positions <-  as.data.frame(table_nmask_watershed)
-  names(df_nuclei_positions) <- c("nuc_number", "frequency")
-  df_nuclei_positions$nuc_number <- as.integer(levels(df_nuclei_positions$nuc_number))
-  
-  if( (dim(df_nuclei_positions)[1]-1) > 0){
     
-    # remove 0
-    df_nuclei_positions <- df_nuclei_positions[!df_nuclei_positions$nuc_number == 0,]
-    nuc_numbers <- df_nuclei_positions$nuc_number
+  if(!is.null(nucleus_color)){
+    # Include numbers of nuclei
+    table_nmask_watershed <- table(nmask_watershed)
+    df_nuclei_positions <-  as.data.frame(table_nmask_watershed)
+    names(df_nuclei_positions) <- c("nuc_number", "frequency")
+    df_nuclei_positions$nuc_number <- as.integer(levels(df_nuclei_positions$nuc_number))
     
-    # Find approximate midpoint of every nucleus
-    df_nuclei_positions$pos_x <- NA
-    df_nuclei_positions$pos_y <- NA
-    for(i in 1:length(nuc_numbers)){
-      dummy_coordinates <- which(
-        EBImage::imageData(nmask_watershed) == nuc_numbers[i], arr.ind = TRUE)
+    if( (dim(df_nuclei_positions)[1]-1) > 0){
       
-      df_nuclei_positions$pos_x[i] <- round(mean(dummy_coordinates[,1]))
-      df_nuclei_positions$pos_y[i] <- round(mean(dummy_coordinates[,2]))
+      # remove 0
+      df_nuclei_positions <- df_nuclei_positions[!df_nuclei_positions$nuc_number == 0,]
+      nuc_numbers <- df_nuclei_positions$nuc_number
       
-    }
-    
-    # Rearrange nuclei (from left to right and top to bottom)
-    df_nuclei_positions <- df_nuclei_positions %>% 
-      dplyr::arrange(pos_y, pos_x)
-    
-    df_nuclei_positions$nuc_number_new <- NA
-    df_nuclei_positions$nuc_number_new <- nuc_numbers
-    
-    # Add nuclei numbers to image
-    for(i in 1:length(nuc_numbers)){
+      # Find approximate midpoint of every nucleus
+      df_nuclei_positions$pos_x <- NA
+      df_nuclei_positions$pos_y <- NA
+      for(i in 1:length(nuc_numbers)){
+        dummy_coordinates <- which(
+          EBImage::imageData(nmask_watershed) == nuc_numbers[i], arr.ind = TRUE)
+        
+        df_nuclei_positions$pos_x[i] <- round(mean(dummy_coordinates[,1]))
+        df_nuclei_positions$pos_y[i] <- round(mean(dummy_coordinates[,2]))
+        
+      }
       
-      image_projection_numbers <- addNumberToImage(
-        image = image_projection_numbers,
-        number = i,
-        pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
-        pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
-        number_size_factor = number_size_factor,
-        number_color = "green")
+      # Rearrange nuclei (from left to right and top to bottom)
+      df_nuclei_positions <- df_nuclei_positions %>% 
+        dplyr::arrange(pos_y, pos_x)
       
-      image_projection_numbers <- addNumberToImage(
-        image = image_projection_numbers,
-        number = i,
-        pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
-        pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
-        number_size_factor = number_size_factor,
-        number_color = "blue")
+      df_nuclei_positions$nuc_number_new <- NA
+      df_nuclei_positions$nuc_number_new <- nuc_numbers
       
-      
-      if(export_normalized_images){
-        image_projection_numbers_normalized <- addNumberToImage(
-          image = image_projection_numbers_normalized,
+      # Add nuclei numbers to image
+      for(i in 1:length(nuc_numbers)){
+        
+        image_projection_numbers <- addNumberToImage(
+          image = image_projection_numbers,
           number = i,
           pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
           pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
           number_size_factor = number_size_factor,
           number_color = "green")
         
-        image_projection_numbers_normalized <- addNumberToImage(
-          image = image_projection_numbers_normalized,
+        image_projection_numbers <- addNumberToImage(
+          image = image_projection_numbers,
           number = i,
           pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
           pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
           number_size_factor = number_size_factor,
           number_color = "blue")
+        
+        
+        if(export_normalized_images){
+          image_projection_numbers_normalized <- addNumberToImage(
+            image = image_projection_numbers_normalized,
+            number = i,
+            pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+            pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
+            number_size_factor = number_size_factor,
+            number_color = "green")
+          
+          image_projection_numbers_normalized <- addNumberToImage(
+            image = image_projection_numbers_normalized,
+            number = i,
+            pos_x = df_nuclei_positions$pos_x[df_nuclei_positions$nuc_number_new == i],
+            pos_y = df_nuclei_positions$pos_y[df_nuclei_positions$nuc_number_new == i],
+            number_size_factor = number_size_factor,
+            number_color = "blue")
+        }
+        
+        
       }
       
       
+      rm(i)
     }
     
-    
-    rm(i)
-  }
-  
-  # Add border of nuclei and save file
-  Image_projection_numbers <- EBImage::Image(image_projection_numbers)
-  EBImage::colorMode(Image_projection_numbers) <- "color"
-  EBImage::colorMode(nmask_watershed) <- "gray"
-  
-  Image_projection_numbers <- EBImage::paintObjects(x = nmask_watershed,
-                                                    tgt = Image_projection_numbers,
-                                                    col='#ff00ff')
-  
-  # Display the number of nuclei
-  print(paste("Number of nuclei: ", nucNo, sep=""))
-  
-  EBImage::writeImage(x = Image_projection_numbers,
-                      files = file.path(output_dir,
-                                        paste(input_file_name,
-                                              "_projection_cilia_all_numbers_nuclei.tif",
-                                              sep = "")),
-                      bits.per.sample = 8,
-                      type = "tiff")
-  
-  
-  if(export_normalized_images){
     # Add border of nuclei and save file
-    Image_projection_numbers_normalized <- EBImage::Image(
-      image_projection_numbers_normalized)
-    EBImage::colorMode(Image_projection_numbers_normalized) <- "color"
+    Image_projection_numbers <- EBImage::Image(image_projection_numbers)
+    EBImage::colorMode(Image_projection_numbers) <- "color"
     EBImage::colorMode(nmask_watershed) <- "gray"
     
-    Image_projection_numbers_normalized <- EBImage::paintObjects(
-      x = nmask_watershed,
-      tgt = Image_projection_numbers_normalized,
-      col='#ff00ff')
+    Image_projection_numbers <- EBImage::paintObjects(x = nmask_watershed,
+                                                      tgt = Image_projection_numbers,
+                                                      col='#ff00ff')
     
-    EBImage::writeImage(x = Image_projection_numbers_normalized,
+    # Display the number of nuclei
+    print(paste("Number of nuclei: ", nucNo, sep=""))
+    
+    EBImage::writeImage(x = Image_projection_numbers,
                         files = file.path(output_dir,
                                           paste(input_file_name,
-                                                "_projection_cilia_all_numbers_nuclei_normalized.tif",
+                                                "_projection_cilia_all_numbers_nuclei.tif",
                                                 sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")
+    
+    
+    if(export_normalized_images){
+      # Add border of nuclei and save file
+      Image_projection_numbers_normalized <- EBImage::Image(
+        image_projection_numbers_normalized)
+      EBImage::colorMode(Image_projection_numbers_normalized) <- "color"
+      EBImage::colorMode(nmask_watershed) <- "gray"
+      
+      Image_projection_numbers_normalized <- EBImage::paintObjects(
+        x = nmask_watershed,
+        tgt = Image_projection_numbers_normalized,
+        col='#ff00ff')
+      
+      EBImage::writeImage(x = Image_projection_numbers_normalized,
+                          files = file.path(output_dir,
+                                            paste(input_file_name,
+                                                  "_projection_cilia_all_numbers_nuclei_normalized.tif",
+                                                  sep = "")),
+                          bits.per.sample = 8,
+                          type = "tiff")
+    }
+    
   }
+  
   
   # 5.6 Normalize and histogram equalized image ----------------------------
   
@@ -1844,12 +1954,30 @@ detectCilia <- function(
   }
   
   # 5.9 Save the number of nuclei ------------------------------------------
-  df_number_nuclei <- data.frame("numberOfNuclei" = nucNo)
-  if(!is.null(df_number_nuclei)){
-    readr::write_csv(df_number_nuclei,
-                     file = file.path(output_dir, "nuclei_number.csv"))
-    readr::write_csv2(df_number_nuclei,
-                      file = file.path(output_dir, "nuclei_number_de.csv"))
+  if(!is.null(nucleus_color)){
+    # Add file name to tibble
+    
+    
+    
+    df_number_nuclei <- data.frame("numberOfNuclei" = nucNo,
+                                   "meanNucAreaInPixels" = mean_nucleus_area_in_pixels)
+
+    if(is.null(input_dir_tif)){
+      df_number_nuclei$fileName <- basename(input_file_czi)
+      df_number_nuclei <- df_number_nuclei %>% 
+        dplyr::relocate(.data$fileName)
+    }else if(is.null(input_file_czi)){
+      df_number_nuclei$dirName <- basename(input_dir_tif)
+      df_number_nuclei <- df_number_nuclei %>% 
+        dplyr::relocate(.data$dirName)
+    }
+    
+    if(!is.null(df_number_nuclei)){
+      readr::write_csv(df_number_nuclei,
+                       file = file.path(output_dir, "nuclei_number.csv"))
+      readr::write_csv2(df_number_nuclei,
+                        file = file.path(output_dir, "nuclei_number_de.csv"))
+    }
   }
   
   # 5.10 Calculate and save length information of cilia --------------------
@@ -1859,6 +1987,17 @@ detectCilia <- function(
                                                  min_cilium_area,
                                                  pixel_size,
                                                  slice_distance)
+  # Add file name to tibble
+  if(is.null(input_dir_tif)){
+    df_cilium_summary$fileName <- basename(input_file_czi)
+    df_cilium_summary <- df_cilium_summary %>% 
+      dplyr::relocate(.data$fileName)
+  }else if(is.null(input_file_czi)){
+    df_cilium_summary$dirName <- basename(input_dir_tif)
+    df_cilium_summary <- df_cilium_summary %>% 
+      dplyr::relocate(.data$dirName)
+  }
+  
   
   if(!is.null(df_cilium_summary)){
     readr::write_csv(df_cilium_summary,

@@ -23,25 +23,30 @@ editImage <- function(image = NULL,
     threshold <- 0.1
   }
 
-  if(missing(object_color)){
-    object_color <- "blue"
+  if(is.null(object_color) || missing(object_color)){
+    object_color <- "red"
   }
 
   object_color <- tolower(object_color)
 
   # Extract the layer of the cilia -----------------------------------------
 
-  if(object_color == "red" | object_color == "r"){
-    image_cilia <- image[,,1]
-  }else if(object_color == "green" | object_color == "g"){
-    image_cilia <- image[,,2]
-  }else if(object_color == "blue" | object_color == "b"){
-    image_cilia <- image[,,3]
+  if(length(dim(image))==3){
+    if(object_color == "red" | object_color == "r"){
+      image_cilia <- image[,,1]
+    }else if(object_color == "green" | object_color == "g"){
+      image_cilia <- image[,,2]
+    }else if(object_color == "blue" | object_color == "b"){
+      image_cilia <- image[,,3]
+    }else{
+      print(paste("Please enter a color (red, green or blue) for the cilia.",
+                  sep=""))
+      return()
+    }
   }else{
-    print(paste("Please enter a color (red, green or blue) for the cilia.",
-                sep=""))
-    return()
+    image_cilia <- image
   }
+  
 
   # Calculate binary mask of cilia pixels ----------------------------------
 
@@ -53,8 +58,14 @@ editImage <- function(image = NULL,
     threshold <- 0
   }
   
-  image_cilia[image_cilia > threshold] <- 1
-  image_cilia[image_cilia <= threshold] <- 0
+  if(threshold != 1){
+    image_cilia[image_cilia > threshold] <- 1
+    image_cilia[image_cilia <= threshold] <- 0
+  }else{
+    image_cilia[image_cilia >= threshold] <- 1
+    image_cilia[image_cilia < threshold] <- 0
+  }
+  
 
   return(image_cilia)
 }
