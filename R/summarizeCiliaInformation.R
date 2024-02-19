@@ -85,7 +85,8 @@ summarizeCiliaInformation <- function(
       # Length of the line
       x2 <- max(df_cilium_projection$pos_y)
       x1 <- min(df_cilium_projection$pos_y)
-      horizontal_length_in_pixels <- sqrt(slope*slope + 1) * (x2 - x1) # in pixels
+      # print(paste0("slope: ", slope))
+      horizontal_length_in_pixels <- sqrt(slope*slope + 1) * (x2 - x1 + 1) # in pixels
       horizontal_length_in_um <- horizontal_length_in_pixels * pixel_size # in \mu m
 
     }else{
@@ -100,7 +101,7 @@ summarizeCiliaInformation <- function(
       # Length of the line
       x2 <- max(df_cilium_projection$pos_x)
       x1 <- min(df_cilium_projection$pos_x)
-      horizontal_length_in_pixels <- sqrt(slope*slope + 1) * (x2 - x1) # in pixels
+      horizontal_length_in_pixels <- sqrt(slope*slope + 1) * (x2 - x1 + 1) # in pixels
       horizontal_length_in_um <- horizontal_length_in_pixels * pixel_size # in \mu m
 
     }

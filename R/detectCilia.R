@@ -618,10 +618,10 @@ detectCilia <- function(
     # }
     
     # threshold_connect
-    threshold_connect <- quantile(Image_cilia_layer_connect,
-                                  (1-ratio_of_cilia_pixels), na.rm = TRUE)
-    threshold_connect <- as.numeric(threshold_connect)
-    
+    # threshold_connect <- quantile(Image_cilia_layer_connect,
+    #                               (1-ratio_of_cilia_pixels), na.rm = TRUE)
+    # threshold_connect <- as.numeric(threshold_connect)
+    threshold_connect <- 0.5*threshold_find
     
     print(paste("The new threshold values are: threshold_find = ",
                 threshold_find, " and threshold_connect = ",
