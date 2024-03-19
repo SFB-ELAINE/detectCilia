@@ -10,6 +10,8 @@
 #' @param pixel_size A number depicting the size of one pixel in micrometers.
 #' @param slice_distance A number depicting the distance of two consecutive
 #' z-stack layers in micrometers.
+#' @param number_of_z_stack_layers A number telling how many z-stack layers
+#' there are in the image.
 #' 
 #' @import graphics
 #' @import stats
@@ -17,21 +19,25 @@
 #' @returns A tibble with summarized cilium information (lengths).
 
 summarizeCiliaInformation <- function(
-  df_cilium_information = df_cilium_information,
-  min_cilium_area = min_cilium_area,
-  pixel_size = pixel_size,
-  slice_distance = slice_distance) {
+  df_cilium_information,
+  min_cilium_area,
+  pixel_size,
+  slice_distance,
+  number_of_z_stack_layers) {
 
   number_of_cilia <- unique(df_cilium_information$ciliumNumber)
 
   df_cilium_summary <- data.frame(cilium = sort(number_of_cilia),
                                   cilium_shape = NA,
+                                  cilium_projection_area_in_pixels = NA,
+                                  cilium_projection_area_in_um2 = NA,
+                                  number_of_z_stack_layers = number_of_z_stack_layers,
                                   lowest_cilium_layer = NA,
                                   uppermost_cilium_layer = NA,
-                                  vertical_length_in_um = NA,
                                   vertical_length_in_layers = NA,
-                                  horizontal_length_in_um = NA,
+                                  vertical_length_in_um = NA,
                                   horizontal_length_in_pixels = NA,
+                                  horizontal_length_in_um = NA,
                                   total_length_in_um = NA)
 
   # Go through every cilium and find the length of the z-projection --------
@@ -41,8 +47,10 @@ summarizeCiliaInformation <- function(
       df_cilium_information$ciliumNumber == i,]
     
     cilium_shape <- df_cilium_projection$cilium_shape[1]
-    # height of cilium (projection in vertical direction)
+    cilium_area <- sum(df_cilium_projection$layer == -99)
+    cilium_area_in_um <- round(x = (cilium_area * pixel_size * pixel_size), digits = 1)
     
+    # height of cilium (projection in vertical direction)
     layers_larger_than_min_size <- unique(df_cilium_projection$layer[df_cilium_projection$layer > 0])[
       as.logical(table(df_cilium_projection$layer[df_cilium_projection$layer > 0]) > min_cilium_area)] #in pixels
     
@@ -110,12 +118,15 @@ summarizeCiliaInformation <- function(
     total_length_in_um <- sqrt(horizontal_length_in_um*horizontal_length_in_um + vertical_length_in_um*vertical_length_in_um)
     
     df_cilium_summary$cilium_shape[df_cilium_summary$cilium == i]                <- cilium_shape
+    df_cilium_summary$cilium_projection_area_in_pixels[
+      df_cilium_summary$cilium == i]                                             <- cilium_area
+    df_cilium_summary$cilium_projection_area_in_um2[df_cilium_summary$cilium == i]<- cilium_area_in_um
     df_cilium_summary$lowest_cilium_layer[df_cilium_summary$cilium == i]         <- lower_layer
     df_cilium_summary$uppermost_cilium_layer[df_cilium_summary$cilium == i]      <- upper_layer
-    df_cilium_summary$vertical_length_in_um[df_cilium_summary$cilium == i]       <- vertical_length_in_um
     df_cilium_summary$vertical_length_in_layers[df_cilium_summary$cilium == i]   <- vertical_length_in_layers
-    df_cilium_summary$horizontal_length_in_um[df_cilium_summary$cilium == i]     <- horizontal_length_in_um
+    df_cilium_summary$vertical_length_in_um[df_cilium_summary$cilium == i]       <- vertical_length_in_um
     df_cilium_summary$horizontal_length_in_pixels[df_cilium_summary$cilium == i] <- horizontal_length_in_pixels
+    df_cilium_summary$horizontal_length_in_um[df_cilium_summary$cilium == i]     <- horizontal_length_in_um
     df_cilium_summary$total_length_in_um[df_cilium_summary$cilium == i]          <- total_length_in_um
   }
   

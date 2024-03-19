@@ -1,7 +1,7 @@
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
 # Created: 2019/12/01
-# Last changed: 2024/02/19
+# Last changed: 2024/03/19
 
 
 # Delete everything in the environment
@@ -80,6 +80,9 @@ input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
 input_file <- system.file("extdata", "testImageCzi", "test.czi",
                           package = "detectCilia", mustWork = TRUE)
 
+input_file <- system.file("extdata", "testImageCzi", "190808_EV38_1_Collagen_FBSwithAsc_63x_zstack_3.czi",
+                          package = "detectCilia", mustWork = TRUE)
+
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 ## FIRST EXAMPLE: Find cilia in TIFs of one z-stack image ------------------
@@ -103,15 +106,19 @@ detectCilia_output_list2 <- detectCilia::detectCilia(input_file_czi = input_file
 
 input_dir <- system.file("extdata", "ArtificialCilium",
                          package = "detectCilia", mustWork = TRUE)
-# input_dir <- system.file("extdata", "ArtificialCiliumGray",
-#                          package = "detectCilia", mustWork = TRUE)
+input_dir <- system.file("extdata", "ArtificialCiliumVertical",
+                         package = "detectCilia", mustWork = TRUE)
+input_dir <- system.file("extdata", "ArtificialCilium45",
+                         package = "detectCilia", mustWork = TRUE)
+input_dir <- system.file("extdata", "ArtificialCiliumBlur3",
+                         package = "detectCilia", mustWork = TRUE)
 detectCilia_output_list4 <- detectCilia::detectCilia(input_dir_tif = input_dir,
                                                      export_normalized_images = FALSE,
                                                      pixel_size = 1,
                                                      slice_distance = 1,
                                                      number_of_expected_nuclei = 1,
-                                                     min_cilium_area = 5,
-                                                     max_cilium_area = 50,
+                                                     min_cilium_area_in_pixels = 5,
+                                                     max_cilium_area_in_pixels = 50,
                                                      nucleus_color = NULL,
                                                      cilium_color = "green",
                                                      number_size_factor = 0.2)

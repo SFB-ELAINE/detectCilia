@@ -5,10 +5,11 @@
 \title{Summarize the information of found cilia}
 \usage{
 summarizeCiliaInformation(
-  df_cilium_information = df_cilium_information,
-  min_cilium_area = min_cilium_area,
-  pixel_size = pixel_size,
-  slice_distance = slice_distance
+  df_cilium_information,
+  min_cilium_area,
+  pixel_size,
+  slice_distance,
+  number_of_z_stack_layers
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ to represent a cilium.}
 
 \item{slice_distance}{A number depicting the distance of two consecutive
 z-stack layers in micrometers.}
+
+\item{number_of_z_stack_layers}{A number telling how many z-stack layers
+there are in the image.}
 }
 \value{
 A tibble with summarized cilium information (lengths).

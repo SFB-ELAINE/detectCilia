@@ -17,12 +17,12 @@ detectCilia(
   threshold_connect = NULL,
   vicinity_combine = NULL,
   vicinity_connect = NULL,
-  min_cilium_area = NULL,
-  max_cilium_area = NULL,
+  min_cilium_area_in_pixels = NULL,
+  max_cilium_area_in_pixels = NULL,
   number_size_factor = NULL,
   pixel_size = NULL,
   slice_distance = NULL,
-  nuc_mask_width_height = NULL,
+  nuc_mask_width_height_in_pixels = NULL,
   export_normalized_images = FALSE,
   number_of_expected_nuclei = NULL
 )
@@ -72,10 +72,10 @@ projection to one cilium.}
 neighborhood for combining found ciliary pixels in every z-stack layer
 to one cilium.}
 
-\item{min_cilium_area}{Minimum number of pixels (integer) a cilium should
+\item{min_cilium_area_in_pixels}{Minimum number of pixels (integer) a cilium should
 consist of.}
 
-\item{max_cilium_area}{Maximum number of pixels (integer) a cilium should
+\item{max_cilium_area_in_pixels}{Maximum number of pixels (integer) a cilium should
 consist of.}
 
 \item{number_size_factor}{A number for resizing the number image
@@ -87,7 +87,7 @@ pixel in micrometers}
 \item{slice_distance}{A number showing the distance of two consecutive
 z-stack layers in micrometers.}
 
-\item{nuc_mask_width_height}{Number of pixels (integer) for nuclei detection.}
+\item{nuc_mask_width_height_in_pixels}{Number of pixels (integer) for nuclei detection.}
 
 \item{export_normalized_images}{A Boolean.
 * `TRUE`: Also export the images with a normalized version of the original
