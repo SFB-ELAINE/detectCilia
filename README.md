@@ -12,7 +12,7 @@ The following example (script) shows the capabilities of the package. The script
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
 # Created: 2019/12/01
-# Last changed: 2024/01/17
+# Last changed: 2024/03/20
 
 
 # Delete everything in the environment
@@ -47,7 +47,7 @@ if(! "czifile" %in% reticulate::py_list_packages()$package){
 }
 
 # Install the R package for reading czi images
-devtools::install_github("SFB-ELAINE/readCzi", upgrade = "ask")
+devtools::install_github("SFB-ELAINE/readCzi@v0.4.0")
 require(readCzi)
 
 # Install this R package for detecting cilia in microscopy images

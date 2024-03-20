@@ -1,5 +1,5 @@
 # -----------------------------------------------------------
-# CITATION file created with {cffr} R package, v0.5.0
+# CITATION file created with {cffr} R package, v1.0.0
 # See also: https://docs.ropensci.org/cffr/
 # -----------------------------------------------------------
  
@@ -9,7 +9,7 @@ type: software
 license: GPL-3.0-or-later
 title: 'detectCilia: Detect and measure the lengths of primary cilia in microscopy
   images'
-version: 0.8.2
+version: 0.8.3
 doi: 10.5281/zenodo.10521546
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
@@ -69,11 +69,10 @@ references:
   url: https://www.R-project.org/
   authors:
   - name: R Core Team
-  location:
-    name: Vienna, Austria
-  year: '2024'
   institution:
     name: R Foundation for Statistical Computing
+    address: Vienna, Austria
+  year: '2024'
   version: '>= 4.0.0'
 - type: software
   title: BiocManager
