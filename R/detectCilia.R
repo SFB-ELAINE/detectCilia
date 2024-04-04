@@ -1628,7 +1628,7 @@ detectCilia <- function(
     rows_to_go_through <- 1:length(df_dummy$pos_x)
     rows_to_go_through <- rows_to_go_through[rows_to_go_through != j]
 
-    threshold_distance <- 1
+    threshold_distance <- round(dim_image_x / 1024, digits = 0)
     df_dummy$ClusterNumber[j] <- 1
 
     if(length(df_dummy$ClusterNumber) > 1){
