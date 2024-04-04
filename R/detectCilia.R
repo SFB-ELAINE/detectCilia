@@ -1313,8 +1313,8 @@ detectCilia <- function(
         }
       }
       rm(list = c("jx", "jy", "df_cilium_points_connect_shifted"))
-      
-      
+
+
       df_cilium_points_connect <- df_cilium_points_connect[
         df_cilium_points_connect$possibleCilium,]
       
@@ -1386,7 +1386,7 @@ detectCilia <- function(
           
           # Mark all structures that are too small and therefore may not be a cilium
           for(k in unique(df_cilium_points_connect$ciliumNumber)){
-            if(sum(df_cilium_points_connect$ciliumNumber == k) < min_cilium_area_in_pixels){
+            if(sum(df_cilium_points_connect$ciliumNumber == k) < floor(min_cilium_area_in_pixels/2)){
               df_cilium_points_connect$possibleCilium[
                 df_cilium_points_connect$ciliumNumber == k] <- FALSE
             }
@@ -1609,72 +1609,30 @@ detectCilia <- function(
       !df_cilium_information$ciliumNumber %in% cilium_numbers_to_be_removed,]
   }
   
-  ###new from here
+  
   # Delete all cilia that are disconnected
   # In every found cilium (cluster), delete separated cilium parts that
   # are not directly connected (being vicinity_connect apart) to the
   # brightest part of that cilium
-  
+
   df_cilium_all$disconnectedCilia <- FALSE
   df_cilium_all$ClusterNumber <- 0
-  
+
   for(i in unique(df_cilium_all$ciliumNumber)){
     # print(i)
     df_dummy <- df_cilium_all[df_cilium_all$ciliumNumber == i,]
-    
-    # # Create a data frame with (x, y) coordinates
-    # coordinates <- data.frame(x = df_dummy$pos_x, y = df_dummy$pos_y)
-    # 
-    # # Calculate pairwise distances
-    # distances <- as.matrix(dist(coordinates, method = "manhattan"))
-    # distances[!lower.tri(distances)] <- NA
-    # 
-    # # Set the threshold distance (e.g., 2 units)
-    # threshold_distance <- 1
-    # 
-    # # Initialize labels
-    # labels <- rep(NA, length(df_dummy$pos_x))
-    # current_label <- 1
-    # 
-    # # Assign labels based on connectivity
-    # for (k in 1:(length(x_coords) - 1)) {
-    #   if(is.na(labels[k])) {
-    #     neighbors <- which(distances[,k] <= threshold_distance)
-    #     labels[neighbors] <- current_label
-    #     current_label <- current_label + 1
-    #   }
-    # }
-    # 
-    # 
-    # 
-    # 
-    # 
-    # 
-    # distances <- as.matrix(dist(cbind(df_dummy$pos_x, df_dummy$pos_y), upper = FALSE, method = "manhattan"))
-    # distances[!lower.tri(distances)] <- NA
-    # 
-    # threshold_distance <- 1
-    # 
-    # connected_pairs <- which(distances <= threshold_distance, arr.ind = TRUE)
-    # 
-    # for (k in 1:nrow(connected_pairs)) {
-    #   point1 <- connected_pairs[k, "row"]
-    #   point2 <- connected_pairs[k, "col"]
-    #   
-    #   df_dummy
-    # }
-    
+
     j <- 1
-    
+
     rows_gone_through <- j
     rows_to_go_through <- 1:length(df_dummy$pos_x)
     rows_to_go_through <- rows_to_go_through[rows_to_go_through != j]
-    
+
     threshold_distance <- 1
     df_dummy$ClusterNumber[j] <- 1
-    
+
     if(length(df_dummy$ClusterNumber) > 1){
-      
+
       next_point <- rows_to_go_through[
         rows_to_go_through %in%
           which(df_dummy$pos_x %in% (df_dummy$pos_x[j] - threshold_distance) : (df_dummy$pos_x[j] + threshold_distance) &
@@ -1684,24 +1642,24 @@ detectCilia <- function(
       }else{
         j <- next_point
       }
-      
+
       while(0 %in% df_dummy$ClusterNumber){
-        
+
         .pos_x_distance <- df_dummy$pos_x[j] -
           df_dummy$pos_x
-        
+
         .pos_y_distance <- df_dummy$pos_y[j] -
           df_dummy$pos_y
-        
+
         .pos_x_distance[abs(.pos_x_distance) <= threshold_distance] <- 0
         .pos_y_distance[abs(.pos_y_distance) <= threshold_distance] <- 0
-        
+
         .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
-        
+
         # Get the cluster number (close cilium that has been detected)
         ClusterNumber_dummy <-
           unique(df_dummy$ClusterNumber[.distance == 0])
-        
+
         if(length(ClusterNumber_dummy) == 1 && ClusterNumber_dummy == 0){
           # Advance cluster number number because there is no cluster close by
           ClusterNumber <- max(df_dummy$ClusterNumber) + 1
@@ -1709,87 +1667,71 @@ detectCilia <- function(
           # Points belong to already existing cluster
           ClusterNumber <- ClusterNumber_dummy[!(ClusterNumber_dummy == 0)]
         }
-        
-        # if(length(ClusterNumber) > 1){
-        #   print(paste0("The following clusters of cilium ", i,
-        #                " are now one: ", paste0(ClusterNumber, collapse = ", ")))
-        #   for(k in 2:length(ClusterNumber)){
-        #     df_dummy$ClusterNumber[
-        #       df_dummy$ClusterNumber == ClusterNumber[k]] <-
-        #       ClusterNumber[1]
-        #   }
-        #   rm(k)
-        #   
-        # }else{
+
           df_dummy$ClusterNumber[
             df_dummy$ClusterNumber == 0 & .distance == 0] <- ClusterNumber
-        # }
-        # 
+
           rows_to_go_through <- rows_to_go_through[rows_to_go_through != j]
           next_point <- rows_to_go_through[
             rows_to_go_through %in%
               which(df_dummy$pos_x %in% (df_dummy$pos_x[j] - threshold_distance) : (df_dummy$pos_x[j] + threshold_distance) &
                       df_dummy$pos_y %in% (df_dummy$pos_y[j] - threshold_distance) : (df_dummy$pos_y[j] + threshold_distance))][1]
           if(is.na(next_point)){
-            j <- rows_to_go_through[1]
+            point_connected_to_others <- FALSE
+            l <- 1
+            while(!point_connected_to_others && l <= length(rows_to_go_through)){
+              .pos_x_distance <- df_dummy$pos_x[rows_to_go_through[l]] -
+                df_dummy$pos_x
+              
+              .pos_y_distance <- df_dummy$pos_y[rows_to_go_through[l]] -
+                df_dummy$pos_y
+              
+              .pos_x_distance[abs(.pos_x_distance) <= threshold_distance] <- 0
+              .pos_y_distance[abs(.pos_y_distance) <= threshold_distance] <- 0
+              
+              .distance <- abs(.pos_x_distance) + abs(.pos_y_distance)
+              
+              if(0 %in% .distance[rows_gone_through]){
+                j <- rows_to_go_through[l]
+                point_connected_to_others <- TRUE
+              }else{
+                l <- l+1
+              }
+            }
+            if(!point_connected_to_others){
+              j <- rows_to_go_through[1]
+            }
+            rows_gone_through <- c(rows_gone_through, j)
           }else{
             j <- next_point
+            rows_gone_through <- c(rows_gone_through, j)
           }
-          
+
       }
-      rm(list = c("j", "ClusterNumber"))
-      
-      # df_test <- df_dummy %>% 
-      #   dplyr::group_by(ClusterNumber) %>%
-      #   dplyr::summarise(meanIntensity = mean(.data$fluorescence_intensity),
-      #                    clusterSize = length(.data$fluorescence_intensity))
-      # 
-      # # Remove all clusters that are too small
-      # df_test <- df_test[!(df_test$clusterSize < min_cilium_area_in_pixels),]
-      # 
-      # cluster_number_with_heighest_mean_intensity <- df_test$ClusterNumber[
-      #   df_test$meanIntensity == max(df_test$meanIntensity)]
-      # 
-      # if(length(cluster_number_with_heighest_mean_intensity)>1){
-      #   print("Please check the determination of the cluster number.")
-      # }
-      # 
-      # df_dummy$disconnectedPart[
-      #   df_dummy$ClusterNumber != cluster_number_with_heighest_mean_intensity] <- TRUE
-      # 
-      # df_dummy <- df_dummy[!df_dummy$disconnectedPart,]
-      # df_dummy <- df_dummy[,!names(df_dummy)=="ClusterNumber"]
-      
-      # # Keep only rows that have been found
-      # if(i == unique(df_cilium_points$ciliumNumber)[1]){
-      #   df_cilium_points2 <- df_dummy
-      # }else{
-      #   df_cilium_points2 <- rbind(df_cilium_points2, df_dummy)
-      # }
-      
+      rm(list = c("j", "l", "ClusterNumber"))
+
       if(max(df_dummy$ClusterNumber) > 1){
         df_cilium_all$disconnectedCilia[df_cilium_all$ciliumNumber == i] <- TRUE
       }
-      
+
     }
-    
+
   }
   rm(list = c("i", "df_dummy"))
-  
+
   # Remove cilia with disconnected cilia
   disconnectedCilia <- unique(df_cilium_all$ciliumNumber[df_cilium_all$disconnectedCilia])
-  
+
   df_cilium_information <- df_cilium_information[!df_cilium_information$ciliumNumber %in% disconnectedCilia, ]
   df_cilium_all <- df_cilium_all[!df_cilium_all$ciliumNumber %in% disconnectedCilia,]
-  
+
   # Drop extra columns
   df_cilium_all <-
     df_cilium_all[,!names(df_cilium_all)=="disconnectedCilia"]
   df_cilium_all <-
     df_cilium_all[,!names(df_cilium_all)=="ClusterNumber"]
   
-  ###new up to here
-  
+
   # Renumber cilia
   .number <- 1
   df_cilium_information$ciliumNumber_NEW <- NA

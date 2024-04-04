@@ -9,7 +9,7 @@ type: software
 license: GPL-3.0-or-later
 title: 'detectCilia: Detect and measure the lengths of primary cilia in microscopy
   images'
-version: 0.8.3
+version: 0.8.4
 doi: 10.5281/zenodo.10521546
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
@@ -27,7 +27,7 @@ preferred-citation:
     email: kai.budde-sagert@uni-rostock.de
     orcid: https://orcid.org/0000-0001-6836-9865
   year: '2024'
-  notes: R package version 0.8.3
+  notes: R package version 0.8.4
   doi: 10.5281/zenodo.10521546
   url: https://github.com/SFB-ELAINE/detectCilia
 repository-code: https://github.com/SFB-ELAINE/detectCilia
@@ -78,17 +78,13 @@ references:
   title: BiocManager
   abstract: 'BiocManager: Access the Bioconductor Project Package Repository'
   notes: Imports
-  url: https://bioconductor.github.io/BiocManager/
+  url: https://github.com/Bioconductor/BiocManager
   repository: https://CRAN.R-project.org/package=BiocManager
   authors:
   - family-names: Morgan
     given-names: Martin
     email: martin.morgan@roswellpark.org
     orcid: https://orcid.org/0000-0002-5874-8148
-  - family-names: Ramos
-    given-names: Marcel
-    email: marcel.ramos@roswellpark.org
-    orcid: https://orcid.org/0000-0002-3242-0582
   year: '2024'
   version: '>= 1.30.19'
 - type: software
@@ -100,7 +96,7 @@ references:
   authors:
   - family-names: Wickham
     given-names: Hadley
-    email: hadley@posit.co
+    email: hadley@rstudio.com
     orcid: https://orcid.org/0000-0003-4757-117X
   - family-names: François
     given-names: Romain
@@ -110,10 +106,6 @@ references:
   - family-names: Müller
     given-names: Kirill
     orcid: https://orcid.org/0000-0002-1416-3412
-  - family-names: Vaughan
-    given-names: Davis
-    email: davis@posit.co
-    orcid: https://orcid.org/0000-0003-4777-038X
   year: '2024'
   version: '>= 1.0.10'
 - type: software
@@ -123,7 +115,7 @@ references:
   url: https://github.com/aoles/EBImage
   repository: https://bioconductor.org/
   authors:
-  - family-names: Oleś
+  - family-names: Oles
     given-names: Andrzej
   - family-names: Pau
     given-names: Gregoire
@@ -138,7 +130,6 @@ references:
   - family-names: Marais
     given-names: Philip A.
   year: '2024'
-  doi: 10.18129/B9.bioc.EBImage
   version: '>= 4.40.0'
 - type: software
   title: magrittr
@@ -157,7 +148,8 @@ references:
   version: '>= 2.0.3'
 - type: software
   title: readCzi
-  abstract: 'readCzi: Read CZI image files, convert them to tifs, and save metadata'
+  abstract: 'readCzi: readCzi: R package to read CZI image files, convert them to
+    tifs, and save metadata'
   notes: Imports
   url: https://github.com/SFB-ELAINE/readCzi
   authors:
@@ -176,12 +168,12 @@ references:
   authors:
   - family-names: Wickham
     given-names: Hadley
-    email: hadley@posit.co
+    email: hadley@rstudio.com
   - family-names: Hester
     given-names: Jim
   - family-names: Bryan
     given-names: Jennifer
-    email: jenny@posit.co
+    email: jenny@rstudio.com
     orcid: https://orcid.org/0000-0002-6983-2759
   year: '2024'
   version: '>= 2.1.3'
@@ -194,9 +186,9 @@ references:
   authors:
   - family-names: Henry
     given-names: Lionel
-    email: lionel@posit.co
+    email: lionel@rstudio.com
   - family-names: Wickham
     given-names: Hadley
-    email: hadley@posit.co
+    email: hadley@rstudio.com
   year: '2024'
   version: '>= 1.0.6'
