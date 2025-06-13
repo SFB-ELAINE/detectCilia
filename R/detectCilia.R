@@ -55,6 +55,7 @@
 #' @param slice_distance A number showing the distance of two consecutive
 #' z-stack layers in micrometers.
 #' @param nuc_mask_width_height_in_pixels Number of pixels (integer) for nuclei detection.
+#' @param nuc_offset_value Number depicting the offset for finding nuclei.
 #' @param export_normalized_images A Boolean.
 #'   * `TRUE`: Also export the images with a normalized version of the original
 #'   z-stack projection/z-stack layer.
@@ -97,6 +98,7 @@ detectCilia <- function(
   pixel_size = NULL,
   slice_distance = NULL,
   nuc_mask_width_height_in_pixels = NULL,
+  nuc_offset_value = NULL,
   export_normalized_images = FALSE,
   number_of_expected_nuclei = NULL) {
   
@@ -222,7 +224,7 @@ detectCilia <- function(
       # }
       
       # Create empty z-stack image
-      if(layer_number == 1){
+      if(layer_number == 0 || layer_number == 1){
         if(length(dim(image)) == 2){
           #Import grayscale image
           image_data <- array(0, dim = c(dim(image), length(file_names_tif)))
@@ -423,6 +425,12 @@ detectCilia <- function(
       Image_nuclei <- 2*Image_nuclei
     }
     
+    # Make the image brighter for detection
+    # Image_nuclei <- EBImage::normalize(Image_nuclei)
+    # offset_value <- 2*as.numeric(quantile(Image_data, 0.9))
+    if(is.null(nuc_offset_value)){
+      nuc_offset_value <- 0.05
+    }
     #display(Image_nuclei)
     #display(Image_nuclei, method = "raster", all = TRUE)
     
@@ -430,7 +438,7 @@ detectCilia <- function(
     nmask <- EBImage::thresh(x = Image_nuclei,
                              w = nuc_mask_width_height_in_pixels,
                              h = nuc_mask_width_height_in_pixels,
-                             offset = 0.05)
+                             offset = nuc_offset_value)
     # display(nmask)
     
     # Morphological opening to remove objects smaller than the structuring element
@@ -522,6 +530,7 @@ detectCilia <- function(
     # Count number of cells
     nucNo <- max(nmask_watershed)
     mean_nucleus_area_in_pixels <- round(total_nuclei_area / nucNo)
+    print(paste0("Number of nuclei found: ", nucNo))
     
     if(export_normalized_images){
       EBImage::writeImage(x = nmask_watershed,
@@ -872,7 +881,7 @@ detectCilia <- function(
   
   # Delete all ciliary pixels that are not bright enough
   # (less than 0.75*median)
-  min_intensity_factor <- 0.75
+  min_intensity_factor <- 0.75 # Check this (maybe a lower value?)
   for(i in unique(df_cilium_points$ciliumNumber)){
     
     indices <- cbind(df_cilium_points$pos_x[df_cilium_points$ciliumNumber == i],
@@ -1614,7 +1623,7 @@ detectCilia <- function(
   # In every found cilium (cluster), delete separated cilium parts that
   # are not directly connected (being vicinity_connect apart) to the
   # brightest part of that cilium
-
+  
   df_cilium_all$disconnectedCilia <- FALSE
   df_cilium_all$ClusterNumber <- 0
 
@@ -1628,7 +1637,7 @@ detectCilia <- function(
     rows_to_go_through <- 1:length(df_dummy$pos_x)
     rows_to_go_through <- rows_to_go_through[rows_to_go_through != j]
 
-    threshold_distance <- round(dim_image_x / 1024, digits = 0)^2
+    threshold_distance <- max(1,round(dim_image_x / 1024, digits = 0)^2)
     df_dummy$ClusterNumber[j] <- 1
 
     if(length(df_dummy$ClusterNumber) > 1){
@@ -2166,9 +2175,6 @@ detectCilia <- function(
     Image_projection_numbers <- EBImage::paintObjects(x = nmask_watershed,
                                                       tgt = Image_projection_numbers,
                                                       col='#ff00ff')
-    
-    # Display the number of nuclei
-    print(paste("Number of nuclei: ", nucNo, sep=""))
     
     EBImage::writeImage(x = Image_projection_numbers,
                         files = file.path(output_dir,
