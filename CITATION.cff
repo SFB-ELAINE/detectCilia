@@ -9,7 +9,7 @@ type: software
 license: GPL-3.0-only
 title: 'detectCilia: Detect and measure the lengths of primary cilia in microscopy
   images'
-version: 0.8.4
+version: 0.8.5
 doi: 10.5281/zenodo.10521546
 abstract: The package loads confocal fluorescence microscopy images and automatically
   determines the positions and lengths of primary cilia of the cells and counts nuclei.
