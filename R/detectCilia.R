@@ -193,6 +193,7 @@ detectCilia <- function(
     }
     
     # i = 1 .. n go through all slices and append them to image_data
+    layer_zero_exists <- FALSE
     for(i in 1:length(file_names_tif)){
       
       print(paste("Dealing with file ", file_names_tif[i], ". (It is now ",
@@ -219,12 +220,18 @@ detectCilia <- function(
       
       layer_number <- as.integer(layer_number)
       
+      if(layer_number == 0){
+        layer_zero_exists <- TRUE
+      }
+      if(layer_zero_exists){
+        layer_number <- layer_number + 1
+      }
       # if(layer_number != i){
       #   print("The numbering of the layers is inaccurate.")
       # }
       
       # Create empty z-stack image
-      if(layer_number == 0 || layer_number == 1){
+      if(layer_number == 1){
         if(length(dim(image)) == 2){
           #Import grayscale image
           image_data <- array(0, dim = c(dim(image), length(file_names_tif)))
@@ -1765,6 +1772,12 @@ detectCilia <- function(
   
   for(i in unique(df_cilium_information$layer[df_cilium_information$layer>0])){
     
+    if(image_format == "tif" && layer_zero_exists){
+      current_layer_number <- i - 1
+    }else{
+      current_layer_number <- i
+    }
+    
     coordinates_layer1 <- matrix(
       data = c(df_cilium_information$pos_x[df_cilium_information$layer == i],
                df_cilium_information$pos_y[df_cilium_information$layer == i],
@@ -1820,7 +1833,7 @@ detectCilia <- function(
                           files = file.path(output_dir,
                                             paste(input_file_name,
                                                   "_cilia_layer_",
-                                                  i, "_normalized.tif",
+                                                  current_layer_number, "_normalized.tif",
                                                   sep = "")),
                           bits.per.sample = 8,
                           type = "tiff")
@@ -1834,7 +1847,7 @@ detectCilia <- function(
                         files = file.path(output_dir,
                                           paste(input_file_name,
                                                 "_cilia_layer_",
-                                                i, ".tif",
+                                                current_layer_number, ".tif",
                                                 sep = "")),
                         bits.per.sample = 8,
                         type = "tiff")

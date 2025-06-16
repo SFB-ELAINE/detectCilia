@@ -23,6 +23,7 @@ detectCilia(
   pixel_size = NULL,
   slice_distance = NULL,
   nuc_mask_width_height_in_pixels = NULL,
+  nuc_offset_value = NULL,
   export_normalized_images = FALSE,
   number_of_expected_nuclei = NULL
 )
@@ -88,6 +89,8 @@ pixel in micrometers}
 z-stack layers in micrometers.}
 
 \item{nuc_mask_width_height_in_pixels}{Number of pixels (integer) for nuclei detection.}
+
+\item{nuc_offset_value}{Number depicting the offset for finding nuclei.}
 
 \item{export_normalized_images}{A Boolean.
 * `TRUE`: Also export the images with a normalized version of the original

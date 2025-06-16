@@ -1,8 +1,9 @@
 # Testscript for using the R package detectCilia +++++++++++++++++++++++++++
 # Author: Kai Budde-Sagert
 # Created: 2019/12/01
-# Last changed: 2024/03/19
+# Last changed: 2025/06/13
 
+# Attention: This script was tested with R 4.4.1.
 
 # Delete everything in the environment
 rm(list = ls())
@@ -10,7 +11,7 @@ rm(list = ls())
 graphics.off()
 
 # Install packages #########################################################
-groundhog.day <- "2023-01-01"
+groundhog.day <- "2024-12-01"
 if(!any(grepl(pattern = "groundhog", x = installed.packages(), ignore.case = TRUE))){
   install.packages("groundhog")
 }
@@ -19,6 +20,7 @@ if(!any(grepl(pattern = "groundhog", x = installed.packages(), ignore.case = TRU
 library(groundhog)
 pkgs <- c("BiocManager", "devtools", "dplyr", "magrittr",
           "readr", "rlang", "reticulate")
+
 groundhog.library(pkgs, groundhog.day)
 
 
@@ -36,7 +38,7 @@ if(! "czifile" %in% reticulate::py_list_packages()$package){
 }
 
 # Install the R package for reading czi images
-devtools::install_github("SFB-ELAINE/readCzi@v0.4.0")
+devtools::install_github("SFB-ELAINE/readCzi@v0.4.1")
 require(readCzi)
 
 # Install this R package for detecting cilia in microscopy images
@@ -47,17 +49,16 @@ require(detectCilia)
 # devtools::document()
 # devtools::check()
 
-# Please adapt the following parameters ####################################
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-### TIF DIRECTORY ###
+## FIRST EXAMPLE: Find cilia in TIFs of one z-stack image ------------------
+
 
 # Directory of the images
 input_dir <- system.file("extdata", "testImagesTif",
                           package = "detectCilia", mustWork = TRUE)
 
 # Directory for the output
-output_dir <- file.path(getwd(), "output")
+output_dir_tif <- file.path(getwd(), "output")
 
 # Size of a pixel in micrometer
 pixel_size <- 0.219645 # in \mu m
@@ -66,66 +67,29 @@ pixel_size <- 0.219645 # in \mu m
 slice_distance <- 0.31607# in \mu m
 
 # Manually set mask width here because image is small
-nuc_mask_width_height <- 100
-
-
-### CZI FILE ###
-
-# Directory for the output
-output_dir <- file.path(getwd(), "output")
-
-# Directory of the images
-input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
-                          package = "detectCilia", mustWork = TRUE)
-input_file <- system.file("extdata", "testImageCzi", "test.czi",
-                          package = "detectCilia", mustWork = TRUE)
-
-input_file <- system.file("extdata", "testImageCzi", "190808_EV38_1_Collagen_FBSwithAsc_63x_zstack_3.czi",
-                          package = "detectCilia", mustWork = TRUE)
-
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-## FIRST EXAMPLE: Find cilia in TIFs of one z-stack image ------------------
+nuc_mask_width_height_in_pixels <- 100
 
 # Obtain all positions of cilia in every z-layer
 detectCilia_output_list <- detectCilia::detectCilia(
   input_dir_tif = input_dir,
-  output_dir = output_dir,
+  output_dir = output_dir_tif,
   pixel_size = pixel_size,
   slice_distance = slice_distance,
-  nuc_mask_width_height = nuc_mask_width_height,
+  nuc_mask_width_height_in_pixels = nuc_mask_width_height_in_pixels,
   number_size_factor = 0.2)
 
 ## SECOND EXAMPLE: CZI file ------------------------------------------------
 
+### CZI FILE ###
+
+# Directory of the images
+input_file <- system.file("extdata", "testImageCzi", "CiliaImage.czi",
+                          package = "detectCilia", mustWork = TRUE)
+
+# Directory for the output
+output_dir_czi <- file.path(getwd(), "output")
+
 # Obtain all positions of cilia in every z-layer
 detectCilia_output_list2 <- detectCilia::detectCilia(input_file_czi = input_file,
-                                                     output_dir = output_dir)
+                                                     output_dir = output_dir_czi)
 
-## THIRD EXAMPLE: Synthetic cilium file ------------------------------------
-
-input_dir <- system.file("extdata", "ArtificialCilium",
-                         package = "detectCilia", mustWork = TRUE)
-input_dir <- system.file("extdata", "ArtificialCiliumVertical",
-                         package = "detectCilia", mustWork = TRUE)
-input_dir <- system.file("extdata", "ArtificialCilium45",
-                         package = "detectCilia", mustWork = TRUE)
-input_dir <- system.file("extdata", "ArtificialCiliumBlur3",
-                         package = "detectCilia", mustWork = TRUE)
-detectCilia_output_list4 <- detectCilia::detectCilia(input_dir_tif = input_dir,
-                                                     export_normalized_images = FALSE,
-                                                     pixel_size = 1,
-                                                     slice_distance = 1,
-                                                     number_of_expected_nuclei = 1,
-                                                     min_cilium_area_in_pixels = 5,
-                                                     max_cilium_area_in_pixels = 50,
-                                                     nucleus_color = NULL,
-                                                     cilium_color = "green",
-                                                     number_size_factor = 0.2)
-
-# Example for detectCilia paper --------------------------------------------
-input_file <- file.path("C:", "Users", "Kai", "Documents", "git",
-                        "gitlabElaine", "2022 DetectCilia", "workflow",
-                        "190815_EV38_2_Collagen_ITSwithAsc+Dexa_63x_zstack_3.czi")
-detectCilia_output_list3 <- detectCilia::detectCilia(input_file_czi = input_file,
-                                                     export_normalized_images = TRUE)

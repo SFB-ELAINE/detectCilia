@@ -1,7 +1,7 @@
 Type: Package
 Package: detectCilia
 Title: Detect and measure the lengths of primary cilia in microscopy images
-Version: 0.8.4
+Version: 0.8.5
 Authors@R: 
     person("Kai", "Budde-Sagert", , "kai.budde-sagert@uni-rostock.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6836-9865"))
@@ -9,7 +9,7 @@ Maintainer: Kai Budde-Sagert <kai.budde-sagert@uni-rostock.de>
 Description: The package loads confocal fluorescence microscopy images and
     automatically determines the positions and lengths of primary cilia of
     the cells and counts nuclei.
-License: GPL-3 + file LICENSE
+License: GPL-3 + file LICENSE.md
 URL: https://github.com/SFB-ELAINE/detectCilia
 BugReports: https://github.com/SFB-ELAINE/detectCilia/issues
 Depends: 
