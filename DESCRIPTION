@@ -9,7 +9,7 @@ Maintainer: Kai Budde-Sagert <kai.budde-sagert@uni-rostock.de>
 Description: The package loads confocal fluorescence microscopy images and
     automatically determines the positions and lengths of primary cilia of
     the cells and counts nuclei.
-License: GPL-3 + file LICENSE.md
+License: GPL-3 + file LICENSE
 URL: https://github.com/SFB-ELAINE/detectCilia
 BugReports: https://github.com/SFB-ELAINE/detectCilia/issues
 Depends: 
